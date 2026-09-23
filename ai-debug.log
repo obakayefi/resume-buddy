@@ -1,0 +1,254 @@
+[2026-04-12T19:09:44.462Z] Action: optimize | Input Model: "llama3.2:3b" | Action Config: null | Global Config: llama3.2:3b | Resolved: llama3.2:3b
+[2026-04-12T19:10:38.681Z] Action: optimize | Input Model: "llama3.2:3b" | Action Config: null | Global Config: llama3.2:3b | Resolved: llama3.2:3b
+[2026-04-12T19:12:33.324Z] Action: linkedin-message | Input Model: "llama3.2:3b" | Action Config: null | Global Config: llama3.2:3b | Resolved: llama3.2:3b
+[2026-04-12T19:12:40.792Z] Action: optimize | Input Model: "glm-5.1:cloud" | Action Config: null | Global Config: llama3.2:3b | Resolved: glm-5.1:cloud
+[2026-04-12T19:12:53.278Z] Action: optimize | Input Model: "qwen3.5:4b" | Action Config: null | Global Config: llama3.2:3b | Resolved: qwen3.5:4b
+[2026-04-12T19:27:02.452Z] Action: optimize | Input Model: "qwen3.5:4b" | Action Config: null | Global Config: llama3.2:3b | Resolved: qwen3.5:4b
+[2026-04-15T08:13:46.413Z] Action: optimize | Input Model: "llama3.2:3b" | Action Config: null | Global Config: llama3.2:3b | Resolved: llama3.2:3b
+[2026-04-15T08:35:31.560Z] Action: optimize | Input Model: "llama3.2:3b" | Action Config: null | Global Config: llama3.2:3b | Resolved: llama3.2:3b
+[2026-04-17T20:08:55.271Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-17T20:09:03.640Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-17T20:09:26.755Z] Action: optimize | Input Model: "qwen3.5:9b" | Resolved: "qwen3.5:9b" | URL: http://localhost:11434
+[2026-04-17T20:12:59.529Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-17T20:13:07.546Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-18T00:13:34.981Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-18T00:26:15.262Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-18T00:30:13.728Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-18T00:36:11.099Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-18T16:21:23.940Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-18T16:21:34.661Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-18T16:21:53.124Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-18T16:28:28.693Z] Action: optimize | Input Model: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-19T02:30:09.112Z] Action: optimize | Input Model: "llama3.2:3b" | Resolved: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T02:36:27.372Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "qwen3.5:9b" (REDIRECTED) | URL: http://localhost:11434
+[2026-04-19T02:57:47.609Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "qwen3.5:9b" (REDIRECTED) | URL: http://localhost:11434
+[2026-04-19T03:20:01.246Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "qwen3.5:9b" (REDIRECTED) | URL: http://localhost:11434
+[2026-04-19T03:20:45.938Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "qwen3.5:9b" (REDIRECTED) | URL: http://localhost:11434
+[2026-04-19T03:43:59.690Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "qwen3.5:9b" (REDIRECTED) | URL: http://localhost:11434
+[2026-04-19T03:53:16.073Z] Action: optimize | Input: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | Final: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-19T03:53:20.844Z] Action: optimize | Input: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | Final: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-19T03:53:36.422Z] Action: optimize | Input: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | Final: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-19T04:16:25.834Z] Action: optimize | Input: "qwen3.5:4b" | Resolved: "qwen3.5:4b" | Final: "qwen3.5:4b" | URL: http://localhost:11434
+[2026-04-19T04:16:58.873Z] ERROR: AbortError | Code: 20 | Msg: This operation was aborted
+Stack: AbortError: This operation was aborted
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:105:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:222:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T04:17:11.908Z] Action: optimize | Input: "qwen3.5:9b" | Resolved: "qwen3.5:9b" | Final: "qwen3.5:9b" | URL: http://localhost:11434
+[2026-04-19T04:17:44.930Z] ERROR: AbortError | Code: 20 | Msg: This operation was aborted
+Stack: AbortError: This operation was aborted
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:105:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:222:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T04:17:55.683Z] Action: optimize | Input: "glm-5.1:cloud" | Resolved: "glm-5.1:cloud" | Final: "glm-5.1:cloud" | URL: http://localhost:11434
+[2026-04-19T04:18:14.946Z] Action: optimize | Input: "glm-5.1:cloud" | Resolved: "glm-5.1:cloud" | Final: "glm-5.1:cloud" | URL: http://localhost:11434
+[2026-04-19T08:37:20.822Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T08:37:53.848Z] ERROR: AbortError | Code: 20 | Msg: This operation was aborted
+Stack: AbortError: This operation was aborted
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:105:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:222:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T09:33:38.529Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T09:40:00.496Z] ERROR: TypeError | Code: undefined | Msg: fetch failed
+Stack: TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:101:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:214:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T10:09:37.424Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T10:19:50.415Z] ERROR: TypeError | Code: undefined | Msg: fetch failed
+Stack: TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:101:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:214:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T10:22:17.727Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T10:26:31.570Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T10:50:30.805Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T11:05:34.350Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T11:17:42.220Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T11:35:21.913Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T11:54:26.086Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T12:07:32.537Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T12:32:19.843Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T12:37:11.256Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T12:37:47.529Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T13:46:41.619Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T14:04:24.161Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T17:58:00.386Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:19:31.295Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:20:05.815Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:31:23.895Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:43:55.103Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:48:15.489Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T18:50:05.890Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T20:30:24.007Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T20:40:44.112Z] ERROR: TypeError | Code: undefined | Msg: fetch failed
+Stack: TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:97:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:210:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-19T20:42:40.803Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T20:55:05.966Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T21:06:12.747Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-19T21:14:44.105Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T05:57:25.996Z] Action: linkedin-message | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T06:26:47.571Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T06:36:02.770Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T06:41:56.703Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T06:45:16.544Z] Action: cover-letter | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-20T07:14:55.569Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T06:19:34.366Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T06:27:45.492Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T06:37:29.366Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T06:52:08.790Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T07:06:53.170Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T08:10:08.359Z] Action: qa-chat | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T11:36:18.438Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-04-22T11:47:50.405Z] ERROR: TypeError | Code: undefined | Msg: fetch failed
+Stack: TypeError: fetch failed
+    at node:internal/deps/undici/undici:13510:13
+    at async fetchWithFailover (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:97:25)
+    at async POST (webpack-internal:///(rsc)/./src/app/api/ai/route.ts:210:21)
+    at async AppRouteRouteModule.do (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+    at async AppRouteRouteModule.handle (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+    at async responseGenerator (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:250:38)
+    at async AppRouteRouteModule.handleResponse (C:\code\personal\resume-buddy\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+    at async handleResponse (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:313:32)
+    at async Module.handler (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fai%2Froute&page=%2Fapi%2Fai%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2Fapi%2Fai%2Froute.ts&appDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5Ccode%5Cpersonal%5Cresume-buddy&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:368:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\code\personal\resume-buddy\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:266:21)
+    at async handleRequest (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:465:24)
+    at async requestHandlerImpl (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\router-server.js:514:13)
+    at async Server.requestListener (C:\code\personal\resume-buddy\node_modules\next\dist\server\lib\start-server.js:225:13)
+[2026-04-22T12:08:20.695Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-05-03T17:16:37.815Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-05-03T17:22:34.683Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-23T13:37:46.166Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-23T13:40:48.741Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-23T13:41:43.893Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-23T15:28:01.004Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-23T15:29:39.318Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
