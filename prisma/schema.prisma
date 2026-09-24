@@ -4,12 +4,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model MasterResume {
-  id             String   @id @default(cuid())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   title          String
   email          String   @default("")
@@ -33,42 +33,42 @@ model MasterResume {
 }
 
 model Application {
-  id                String   @id @default(cuid())
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
   company           String
   jobTitle          String
-  jobUrl            String   @default("")
-  salary            String   @default("")
-  location          String   @default("")
+  jobUrl            String    @default("")
+  salary            String    @default("")
+  location          String    @default("")
   jobDescription    String
-  extraInfo         String   @default("") // optional extra context about company/role
-  status            String   @default("saved") // saved, applied, interviewing, offer, rejected
-  atsScore          Int      @default(0)
-  optimizedResume   String   @default("") // JSON snapshot of optimized bullets
-  optimizedSummary  String   @default("")
-  coverLetter       String   @default("")
-  linkedinMessage   String   @default("")
-  recruiterName     String   @default("")
-  recruiterLinkedin String   @default("")
-  notes             String   @default("")
+  extraInfo         String    @default("") // optional extra context about company/role
+  status            String    @default("saved") // saved, applied, interviewing, offer, rejected
+  atsScore          Int       @default(0)
+  optimizedResume   String    @default("") // JSON snapshot of optimized bullets
+  optimizedSummary  String    @default("")
+  coverLetter       String    @default("")
+  linkedinMessage   String    @default("")
+  recruiterName     String    @default("")
+  recruiterLinkedin String    @default("")
+  notes             String    @default("")
   appliedAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  generationTimes   String   @default("{}") // JSON tracking time per section
+  generationTimes String @default("{}") // JSON tracking time per section
 
-  masterResumeId  String
-  masterResume    MasterResume @relation(fields: [masterResumeId], references: [id])
+  masterResumeId String       @db.ObjectId
+  masterResume   MasterResume @relation(fields: [masterResumeId], references: [id])
 }
 
 model Settings {
-  id            String @id @default("default")
+  id            String @id @default("default") @map("_id")
   ollamaModel   String @default("llama3")
   ollamaBaseUrl String @default("http://localhost:11434")
   actionConfig  String @default("{}")
 }
 
 model Scholarship {
-  id           String   @id @default(cuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
   organization String
   track        String   @default("General") // AI, Cybersecurity, General STEM, Diversity
@@ -80,28 +80,27 @@ model Scholarship {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  questions    ScholarshipQuestion[]
+  questions ScholarshipQuestion[]
 }
 
 model ScholarshipQuestion {
-  id             String   @id @default(cuid())
-  scholarshipId  String
-  scholarship    Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
-  prompt         String
-  maxWords       Int      @default(300)
-  maxChars       Int      @default(0)
-  answer         String   @default("")
-  status         String   @default("todo") // todo, drafting, done
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  scholarshipId String      @db.ObjectId
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id])
+  prompt        String
+  maxWords      Int         @default(300)
+  maxChars      Int         @default(0)
+  answer        String      @default("")
+  status        String      @default("todo") // todo, drafting, done
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model StoryBankItem {
-  id          String   @id @default(cuid())
-  title       String
-  category    String   // AI, Cybersecurity, Leadership, Challenge, Goal
-  content     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  category  String // AI, Cybersecurity, Leadership, Challenge, Goal
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-

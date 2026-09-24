@@ -252,3 +252,4 @@ Stack: TypeError: fetch failed
 [2026-09-23T13:41:43.893Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
 [2026-09-23T15:28:01.004Z] Action: analyze | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
 [2026-09-23T15:29:39.318Z] Action: optimize | Input: "llama3.2:3b" | Resolved: "llama3.2:3b" | Final: "llama3.2:3b" | URL: http://localhost:11434
+[2026-09-24T10:53:31.591Z] Action: optimize | Input: "llama3" | Resolved: "llama3" | Final: "llama3.2:3b" (REDIRECTED) | URL: http://127.0.0.1:11434
