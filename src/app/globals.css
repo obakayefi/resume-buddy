@@ -4595,9 +4595,10 @@ body {
   .app-sidebar .sidebar-mobile-menu {
     display: grid;
     grid-column: 2;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     place-items: center;
+    padding: 11px;
     color: #fff;
     background: linear-gradient(145deg, #7098ec, #3567c8 70%, #2a4f9d);
     border: 1px solid rgba(255,255,255,.72);
