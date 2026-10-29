@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { Settings, Zap, RotateCcw } from 'lucide-react';
+import AppTopbar from '@/components/AppTopbar';
+import { Settings, Zap, RotateCcw, Check, Sparkles } from 'lucide-react';
+import { SelectField, Tabs } from '@/components/ui';
 
 const defaultPrompts: Record<string, string> = {
   'analyze': `You are an expert ATS (Applicant Tracking System) analyst. Compare a resume against a job description and provide a detailed gap analysis.
@@ -40,23 +42,27 @@ Rules:
 - Use strong action verbs
 - Include quantifiable results where possible
 - Mark relevance as "high", "medium", or "low"`,
-  'cover-letter': `Act as an expert Technical Copywriter and Senior Engineering Manager. Your goal is to write a high-conversion cover letter that sounds human, assertive, and impact-driven.
+  'cover-letter': `Act as a senior executive career strategist adhering strictly to the prestigious Harvard Office of Career Services (OCS) business standard. Your objective is to compose an exceptionally articulate, high-impact, and publication-ready cover letter.
 
-WRITING RULES (Strict Adherence):
+HARVARD STANDARD REQUIREMENTS:
+1. BUSINESS LETTER STRUCTURE:
+   - Header: Candidate Name and Contact Details.
+   - Date: Formal date (e.g., Month Day, Year).
+   - Recipient Block: Hiring Team / [Company Name].
+   - Formal Salutation: "Dear [Company Name] Hiring Team," (or specified recruiter name).
+   - Opening Paragraph: State the exact position applied for, establish high-caliber engineering credentials and technical identity, and state a compelling, strategic value proposition for the company.
+   - Body Paragraph 1 (Core Technical Impact): Highlight 2-3 specific, metric-backed achievements from the resume (e.g., latency reduction, performance optimization, scale) seamlessly mapped to the company's technical requirements and tech stack in the Job Description.
+   - Body Paragraph 2 (Architectural Ownership & Team Velocity): Articulate how the candidate's engineering rigor, async-first collaboration, system design, and mentoring elevate team velocity and solve the company's scaling challenges.
+   - Closing Paragraph: Reiterate enthusiasm for the company's product trajectory, express confidence in contributing immediate value, invite an interview/technical conversation, and include "Thank you for your time and consideration."
+   - Formal Sign-off: "Sincerely," followed by the candidate's full name.
 
-1. NO FLUFF: Avoid "I am thrilled," "passionate innovator," or "ideal candidate."
-2. THE HOOK: Start with a direct observation about the company's product or a technical challenge they are likely facing based on the JD.
-3. PROVE IT: Do not list tools. Instead, link a tool to a business outcome (e.g., "Used Python/AWS to cut server costs by 20%" rather than "I know Python and AWS").
-4. TONE: Professional, peer-to-peer (not submissive), and direct. Use "active" verbs.
-5. GLOBAL FIT: Emphasize "Async-friendly" communication and the ability to work independently in a distributed team.
-
-STRUCTURE:
-- Para 1: The Hook (Why this company + the specific problem I solve).
-- Para 2: The Evidence (The "Hero" story from past work that matches their needs — pull from the resume achievements).
-- Para 3: The Culture/Tech Alignment (Briefly why the candidate's stack/workflow fits their specific team).
-- Para 4: The Call to Action (Assertive closing — NOT "I look forward to hearing from you").
-
-Output the cover letter in clean, professional Markdown format. Use the candidate's real name from the resume. Keep it concise — no more than 400 words.`,
+2. STRICT FORMATTING & QUALITY RULES:
+   - CRITICAL: Absolutely NO markdown headers (#, ##, ###), NO bold paragraph labels (e.g. do NOT write "**Paragraph 1:**"), NO bullet points, and NO horizontal rules.
+   - Never output empty headings or "### ".
+   - Write in elegant, flowing prose paragraphs separated by standard double newlines.
+   - Do NOT ask rhetorical quiz questions or interrogation questions to the employer (e.g., never say "What is your roadmap for [X]?").
+   - Maintain an authoritative, respectful, peer-level executive voice. Avoid generic fluff ("passionate", "go-getter") and submissive language.
+   - Output ONLY the finished letter text without any introductory pleasantries or meta-commentary.`,
   'linkedin-message': `Act as an expert Technical Copywriter. Write a short, assertive LinkedIn connection request message from a Senior Full Stack Engineer to a recruiter or hiring manager.
 
 RULES:
@@ -94,12 +100,12 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('global');
 
   const tabs = [
-    { id: 'global', label: 'Global' },
-    { id: 'analyze', label: 'Analyze' },
-    { id: 'optimize', label: 'Optimize' },
-    { id: 'cover-letter', label: 'Cover Letter' },
-    { id: 'linkedin-message', label: 'LinkedIn' },
-    { id: 'qa-chat', label: 'Q&A Chat' },
+    { id: 'global', label: 'Global defaults', detail: 'Endpoint and fallback model' },
+    { id: 'analyze', label: 'Gap analysis', detail: 'Resume and role comparison' },
+    { id: 'optimize', label: 'Resume optimizer', detail: 'Tailored resume content' },
+    { id: 'cover-letter', label: 'Cover letter', detail: 'Application letter drafting' },
+    { id: 'linkedin-message', label: 'Outreach message', detail: 'Recruiter and hiring team notes' },
+    { id: 'qa-chat', label: 'AI Q&A', detail: 'Application and interview answers' },
   ];
 
   const loadSettingsAndModels = async () => {
@@ -162,58 +168,82 @@ export default function SettingsPage() {
   };
 
   const activeConf = actionConfig[activeTab] || {};
+  const installedModelOptions = availableModels.map((model) => ({
+    value: model.name,
+    label: model.name,
+    description: 'Available on this device',
+    group: 'Installed models',
+    icon: <Sparkles size={14} />,
+  }));
+  const fallbackModelOptions = fetchingModels
+    ? [{ value: '__loading__', label: 'Checking available models', description: 'Reading your local model list.', group: 'Model status', icon: <Sparkles size={14} /> }]
+    : availableModels.length
+      ? [
+          ...(availableModels.some((model) => model.name === globalModel) ? [] : [{ value: globalModel, label: globalModel, description: 'Configured model was not detected locally.', group: 'Configured model', icon: <Settings size={14} /> }]),
+          ...installedModelOptions,
+        ]
+      : [{ value: '__no-models__', label: 'No models found', description: 'Install a model or check the Ollama service URL.', group: 'Model status', icon: <Settings size={14} /> }];
+  const workflowModelOptions = [
+    { value: '', label: `Use Global Model (${globalModel})`, description: 'Inherit the workspace fallback model.', group: 'Global model', icon: <Zap size={14} /> },
+    ...installedModelOptions,
+  ];
 
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content">
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Settings size={28} /> AI Settings
-          </h1>
-          <button className="btn btn-primary" onClick={saveSettings} disabled={saving}>
-            {saving ? 'Saving...' : 'Save All Settings'}
+      <AppTopbar />
+      <main className="main-content settings-page">
+        <div className="page-header settings-page-header">
+          <div>
+            <div className="settings-eyebrow">WORKSPACE PREFERENCES</div>
+            <h1 className="page-title settings-page-title"><Settings size={23} aria-hidden="true" /> AI Settings</h1>
+            <p className="page-subtitle">Choose the model and instructions that power each Applikator AI workflow.</p>
+          </div>
+          <button className="btn btn-primary settings-save-button" onClick={saveSettings} disabled={saving}>
+            {saving ? <span className="spinner" /> : <Check size={16} />}
+            {saving ? 'Saving…' : 'Save changes'}
           </button>
         </div>
 
-        <div className="tabs">
-          {tabs.map(t => (
-            <button key={t.id} className={`tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <div className="settings-layout">
+          <nav className="settings-nav" aria-label="AI settings categories">
+            <span className="settings-nav-heading">CONFIGURATION</span>
+            <Tabs items={tabs.map(({ id, label, detail }) => ({ id, label, description: detail }))} value={activeTab} onChange={setActiveTab} label="AI settings categories" orientation="vertical" idPrefix="settings" className="settings-shared-tabs" />
+            <div className={`settings-model-status ${fetchingModels ? 'pending' : availableModels.length ? 'ready' : 'offline'}`}>
+              <span className="settings-status-dot" />
+              <span><strong>{fetchingModels ? 'Checking Ollama' : availableModels.length ? 'Ollama connected' : 'No models detected'}</strong><small>{fetchingModels ? 'Loading available models' : availableModels.length ? `${availableModels.length} model${availableModels.length === 1 ? '' : 's'} available` : 'Check the service URL below'}</small></span>
+            </div>
+          </nav>
 
-        <div className="card" style={{ maxWidth: 800 }}>
+        <section className="card settings-card" id={`panel-settings-${activeTab}`} role="tabpanel" aria-labelledby={`tab-settings-${activeTab}`}>
           {activeTab === 'global' ? (
             <>
-              <h2 className="card-title">Global Fallbacks</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
+              <div className="settings-section-heading"><div><span className="settings-section-kicker">BASE CONFIGURATION</span><h2 className="card-title">Global defaults</h2></div><span className="settings-section-icon"><Zap size={17} /></span></div>
+              <p className="settings-section-intro">
                 These are the baseline settings. Any specific sector that doesn't have a model override will fall back to this Global Model.
               </p>
 
-              <div className="form-group">
-                <label className="form-label">Ollama Base URL</label>
-                <input className="form-input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} />
+              <div className="form-group settings-field">
+                <label className="form-label" htmlFor="ollama-base-url">Ollama service URL</label>
+                <input id="ollama-base-url" className="form-input" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="http://127.0.0.1:11434" />
+                <small>Applikator uses this local Ollama endpoint to discover and run models.</small>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Global Fallback Model</label>
-                <select 
-                  className="form-select" 
-                  value={globalModel}
-                  onChange={(e) => setGlobalModel(e.target.value)}
-                >
-                  {fetchingModels ? <option>Loading models...</option> : null}
-                  {!fetchingModels && availableModels.length === 0 && <option value="">No models found</option>}
-                  {availableModels.map(m => (
-                    <option key={m.name} value={m.name}>{m.name}</option>
-                  ))}
-                </select>
+              <div className="form-group settings-field">
+                <SelectField
+                  label="Global fallback model"
+                  options={fallbackModelOptions}
+                  value={fetchingModels ? '__loading__' : availableModels.length ? globalModel : '__no-models__'}
+                  onChange={setGlobalModel}
+                  disabled={fetchingModels || availableModels.length === 0}
+                  leadingIcon={<Sparkles size={14} />}
+                  name="global-fallback-model"
+                  hint="Used by workflows without a model override."
+                />
               </div>
-              <div style={{ marginTop: 24, padding: 16, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)' }}>
-                <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>RAM & Performance Tips</h3>
-                <ul style={{ fontSize: 12, color: 'var(--text-muted)', paddingLeft: 18, lineHeight: 1.6 }}>
+              <div className="settings-tips">
+                <h3>RAM & performance tips</h3>
+                <ul>
                   <li><strong><span style={{ color: 'var(--accent-green)' }}>8GB RAM:</span></strong> Use <b>phi3:mini</b> or <b>tinyllama</b> for the best experience.</li>
                   <li><strong><span style={{ color: 'var(--accent-amber)' }}>16GB RAM:</span></strong> You can comfortably run <b>llama3</b> or <b>mistral</b>.</li>
                   <li><strong>Troubleshooting:</strong> If you get a "System Memory" error, close your browser tabs or restart Ollama to free up fragmented RAM.</li>
@@ -222,42 +252,40 @@ export default function SettingsPage() {
             </>
           ) : (
             <>
-              <h2 className="card-title" style={{ textTransform: 'capitalize' }}>{activeTab.replace('-', ' ')} Settings</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
+              <div className="settings-section-heading"><div><span className="settings-section-kicker">WORKFLOW CONFIGURATION</span><h2 className="card-title">{tabs.find((tab) => tab.id === activeTab)?.label} settings</h2></div><span className="settings-section-icon"><Settings size={17} /></span></div>
+              <p className="settings-section-intro">
                 Override the AI model and customize the specific System Prompt guidelines for this feature.
               </p>
 
-              <div className="form-group">
-                <label className="form-label">Override Default Model <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 'normal' }}>(Optional)</span></label>
-                <select 
-                  className="form-select" 
+              <div className="form-group settings-field">
+                <SelectField
+                  label="Override default model (optional)"
+                  options={workflowModelOptions}
                   value={activeConf.model || ''}
-                  onChange={(e) => handleActionChange('model', e.target.value)}
-                >
-                  <option value="">Use Global Model ({globalModel})</option>
-                  {availableModels.map(m => (
-                    <option key={m.name} value={m.name}>{m.name}</option>
-                  ))}
-                </select>
+                  onChange={(value) => handleActionChange('model', value)}
+                  leadingIcon={<Sparkles size={14} />}
+                  name="workflow-model"
+                  hint="Choose a workflow-specific model or inherit the global fallback."
+                />
               </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>System Prompt Instructions</label>
+              <div className="form-group settings-field settings-prompt-field">
+                <div className="settings-prompt-heading">
+                  <label className="form-label" htmlFor="workflow-prompt">System prompt instructions</label>
                   <button 
-                    className="btn btn-ghost btn-sm" 
-                    style={{ fontSize: 11, padding: '2px 8px', height: 'auto' }}
+                    type="button"
+                    className="btn btn-ghost btn-sm settings-reset-button"
                     onClick={() => handleActionChange('prompt', defaultPrompts[activeTab] || '')}
                   >
                     <RotateCcw size={12} /> Reset to Default
                   </button>
                 </div>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
+                <p className="settings-prompt-help">
                   Be careful modifying strict prompts (like Analyze/Optimize) as the application requires specific JSON structures to render properly.
                 </p>
                 <textarea 
+                  id="workflow-prompt"
                   className="form-textarea" 
-                  style={{ minHeight: 400, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.5 }}
                   value={activeConf.prompt !== undefined ? activeConf.prompt : (defaultPrompts[activeTab] || '')}
                   onChange={(e) => handleActionChange('prompt', e.target.value)}
                 />
@@ -265,7 +293,8 @@ export default function SettingsPage() {
             </>
           )}
 
-          {msg && <p style={{ marginTop: 16, fontSize: 14, color: 'var(--accent-green)' }}>{msg}</p>}
+          {msg && <p className={`settings-save-message ${msg.startsWith('Error') ? 'error' : ''}`} role="status">{msg}</p>}
+        </section>
         </div>
       </main>
     </div>

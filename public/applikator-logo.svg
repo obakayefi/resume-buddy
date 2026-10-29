@@ -1,0 +1,29 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="applikatorApexGrad" x1="24" y1="6" x2="24" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="applikatorGlow" x1="24" y1="6" x2="24" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A7F3D0" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <!-- Background soft container (optional / icon badge) -->
+  <rect width="48" height="48" rx="12" fill="#090D16" />
+  
+  <!-- Subtle inner border -->
+  <rect x="0.5" y="0.5" width="47" height="47" rx="11.5" stroke="white" stroke-opacity="0.08" />
+
+  <!-- Monogram 'A' Apex -->
+  <path d="M24 7L8 39H17.5L24 25.5L30.5 39H40L24 7Z" fill="url(#applikatorApexGrad)" />
+  
+  <!-- Top Apex Highlight -->
+  <path d="M24 7L16 23H32L24 7Z" fill="url(#applikatorGlow)" />
+
+  <!-- Career Step Crossbar (Pure White for sharp contrast at small scales) -->
+  <rect x="18" y="27" width="12" height="4" rx="2" fill="#FFFFFF" />
+
+  <!-- Precision Focal Beacon -->
+  <circle cx="24" cy="18" r="2.2" fill="#FFFFFF" />
+</svg>

@@ -2,8 +2,10 @@
 
 import { useState, useEffect, use } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AppTopbar from '@/components/AppTopbar';
 import Modal from '@/components/Modal';
-import { Scholarship, ScholarshipQuestion, StoryBankItem, SCHOLARSHIP_STATUS_LABELS, SCHOLARSHIP_STATUS_COLORS } from '@/lib/types';
+import { SelectField, useConfirmDialog } from '@/components/ui';
+import { Scholarship, ScholarshipQuestion, StoryBankItem, SCHOLARSHIP_STATUS_LABELS } from '@/lib/types';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -23,12 +25,17 @@ import {
   BookOpen,
   DollarSign,
   Calendar,
-  Layers,
-  ChevronRight,
   X
 } from 'lucide-react';
 
+const SCHOLARSHIP_STATUS_OPTIONS = Object.entries(SCHOLARSHIP_STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+  description: value === 'awarded' ? 'The award has been confirmed.' : `Mark this application as ${label.toLowerCase()}.`,
+}));
+
 export default function ScholarshipDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const { id } = use(params);
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
   const [questions, setQuestions] = useState<ScholarshipQuestion[]>([]);
@@ -168,7 +175,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
   };
 
   const handleDeleteQuestion = async (qId: string) => {
-    if (!confirm('Are you sure you want to remove this question prompt?')) return;
+    if (!await confirm({ title: 'Remove this prompt?', description: 'The prompt and its associated answer will be removed.', confirmLabel: 'Remove prompt' })) return;
     try {
       const res = await fetch(`/api/scholarships/${id}/questions?questionId=${qId}`, {
         method: 'DELETE',
@@ -322,7 +329,8 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
     return (
       <div className="app-layout">
         <Sidebar />
-        <main className="main-content" style={{ padding: '32px 40px' }}>
+        <AppTopbar />
+        <main className="main-content scholarship-detail-page">
           <div className="loading-overlay" style={{ height: 350, background: 'transparent' }}>
             <div className="spinner" /> Loading application workspace...
           </div>
@@ -335,7 +343,8 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
     return (
       <div className="app-layout">
         <Sidebar />
-        <main className="main-content" style={{ padding: '32px 40px' }}>
+        <AppTopbar />
+        <main className="main-content scholarship-detail-page">
           <div className="empty-state">
             <div className="empty-state-icon"><GraduationCap size={32} /></div>
             <p className="empty-state-title">Scholarship Not Found</p>
@@ -355,42 +364,29 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content" style={{ padding: '32px 40px' }}>
+      <AppTopbar />
+      {confirmDialog}
+      <main className="main-content scholarship-detail-page">
         
         {/* Navigation Breadcrumb & Top Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--border-secondary)' }}>
+        <div className="scholarship-detail-toolbar">
           <Link
             href="/scholarships"
-            className="btn btn-ghost"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13 }}
+            className="btn btn-ghost scholarship-back-link"
           >
             <ArrowLeft size={16} /> Back to Scholarships
           </Link>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Status:
-            </span>
-            <select
-              value={scholarship.status}
-              onChange={e => handleUpdateStatus(e.target.value)}
-              className="form-select"
-              style={{ fontSize: 12, padding: '6px 12px', minWidth: 150 }}
-            >
-              {Object.entries(SCHOLARSHIP_STATUS_LABELS).map(([k, label]) => (
-                <option key={k} value={k}>
-                  {label}
-                </option>
-              ))}
-            </select>
+          <div className="scholarship-detail-status">
+            <SelectField label="Application status" name="scholarship-detail-status" options={SCHOLARSHIP_STATUS_OPTIONS} value={scholarship.status} onChange={handleUpdateStatus} />
           </div>
         </div>
 
         {/* Program Info Banner */}
-        <div className="card" style={{ padding: 24, marginBottom: 28 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 280 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div className="card scholarship-detail-hero">
+          <div className="scholarship-detail-hero-main">
+            <div className="scholarship-detail-identity">
+              <div className="scholarship-detail-tags">
                 <span className="badge badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, padding: '4px 10px' }}>
                   {scholarship.track === 'AI' && <Cpu size={13} />}
                   {scholarship.track === 'Cybersecurity' && <Shield size={13} />}
@@ -402,7 +398,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                     href={scholarship.url.startsWith('http') ? scholarship.url : `https://${scholarship.url}`}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ fontSize: 12, color: 'var(--accent-primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    className="scholarship-portal-link"
                   >
                     Portal Link <ExternalLink size={12} />
                   </a>
@@ -410,31 +406,31 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
               </div>
 
               <div>
-                <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+                <h1 className="scholarship-detail-title">
                   {scholarship.name}
                 </h1>
-                <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>
+                <p className="scholarship-detail-organization">
                   {scholarship.organization}
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div className="scholarship-detail-facts">
               {scholarship.awardAmount && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)' }}>
+                <div className="scholarship-detail-fact">
                   <DollarSign size={18} style={{ color: 'var(--accent-amber)' }} />
                   <div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Award</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{scholarship.awardAmount}</div>
+                    <div className="scholarship-detail-fact-label">Award</div>
+                    <div className="scholarship-detail-fact-value">{scholarship.awardAmount}</div>
                   </div>
                 </div>
               )}
               {scholarship.deadline && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)' }}>
+                <div className="scholarship-detail-fact">
                   <Calendar size={18} style={{ color: 'var(--accent-primary)' }} />
                   <div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Deadline</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{scholarship.deadline}</div>
+                    <div className="scholarship-detail-fact-label">Deadline</div>
+                    <div className="scholarship-detail-fact-value">{scholarship.deadline}</div>
                   </div>
                 </div>
               )}
@@ -443,21 +439,20 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
         </div>
 
         {/* Main Workspace: Left Questions Panel & Right Active Question Editor */}
-        <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 24, alignItems: 'start' }}>
+        <div className="scholarship-workspace">
           
           {/* Left Column: Questions List & Story Bank Grounding Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="scholarship-workspace-rail">
             
             {/* Question Tabs Card */}
-            <div className="card" style={{ padding: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border-secondary)' }}>
-                <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+            <div className="card scholarship-question-panel">
+              <div className="scholarship-panel-heading">
+                <h2>
                   <BookOpen size={16} style={{ color: 'var(--accent-primary)' }} /> Essay Prompts ({questions.length})
                 </h2>
                 <button
                   onClick={() => setIsNewQuestionModalOpen(true)}
-                  className="btn btn-ghost btn-icon"
-                  style={{ width: 28, height: 28, padding: 0 }}
+                  className="btn btn-ghost btn-icon scholarship-icon-button"
                   title="Add prompt"
                 >
                   <Plus size={16} />
@@ -476,7 +471,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 380, overflowY: 'auto', paddingRight: 4 }}>
+                <div className="scholarship-question-list">
                   {questions.map((q, idx) => {
                     const isActive = q.id === activeQuestionId;
                     const qWords = countWords(q.answer);
@@ -489,20 +484,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                           setActiveQuestionId(q.id);
                           setCritiqueResult(null);
                         }}
-                        style={{
-                          textAlign: 'left',
-                          padding: '12px 14px',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid',
-                          borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-secondary)',
-                          background: isActive ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-secondary)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 6,
-                          transition: 'all 0.15s',
-                        }}
+                        className={`scholarship-question-choice ${isActive ? 'active' : ''}`}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)' }}>
@@ -533,19 +515,19 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* Story Bank Grounding Selector Card */}
-            <div className="card" style={{ padding: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-secondary)' }}>
-                <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+            <div className="card scholarship-evidence-panel">
+              <div className="scholarship-panel-heading">
+                <h2>
                   <Sparkles size={16} style={{ color: 'var(--accent-amber)' }} /> Story Evidence Vault
                 </h2>
                 <Link
                   href="/story-bank"
-                  style={{ fontSize: 12, color: 'var(--accent-primary)', textDecoration: 'none' }}
+                  className="scholarship-manage-link"
                 >
                   Manage &rarr;
                 </Link>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 14 }}>
+              <p className="scholarship-evidence-intro">
                 Select factual background stories from your Story Bank to ground AI-drafted essays.
               </p>
 
@@ -557,26 +539,11 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                   </Link>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto', paddingRight: 4 }}>
+                <div className="scholarship-evidence-list">
                   {storyBankItems.map(item => {
                     const isSelected = selectedStoryIds.includes(item.id);
                     return (
-                      <label
-                        key={item.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 10,
-                          padding: '10px 12px',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid',
-                          borderColor: isSelected ? 'var(--accent-primary)' : 'var(--border-secondary)',
-                          background: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'var(--bg-secondary)',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          transition: 'all 0.15s',
-                        }}
-                      >
+                      <label key={item.id} className={`scholarship-evidence-option ${isSelected ? 'selected' : ''}`}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -587,13 +554,13 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                               setSelectedStoryIds(selectedStoryIds.filter(itemId => itemId !== item.id));
                             }
                           }}
-                          style={{ marginTop: 2 }}
+                          className="scholarship-evidence-checkbox"
                         />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div className="scholarship-evidence-copy">
+                          <div className="scholarship-evidence-title">
                             {item.title}
                           </div>
-                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                          <div className="scholarship-evidence-category">
                             {item.category}
                           </div>
                         </div>
@@ -609,24 +576,22 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
           {/* Right Column: Active Question Editor & AI Generation Actions */}
           <div>
             {activeQuestion ? (
-              <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div className="card scholarship-answer-panel">
                 
                 {/* Question Header & Prompt Input */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 16, borderBottom: '1px solid var(--border-secondary)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Prompt Editor & Limits
-                    </span>
+                <div className="scholarship-active-prompt">
+                  <div className="scholarship-active-prompt-heading">
+                    <div><span className="scholarship-panel-kicker">ACTIVE ESSAY</span><h2>Prompt and word limit</h2></div>
                     <button
                       onClick={() => handleDeleteQuestion(activeQuestion.id)}
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: 'var(--accent-red)', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+                      className="btn btn-ghost btn-sm scholarship-remove-prompt"
                     >
                       <Trash2 size={13} /> Remove Prompt
                     </button>
                   </div>
 
                   <textarea
+                    aria-label="Edit essay prompt"
                     rows={2}
                     value={activeQuestion.prompt}
                     onChange={e => {
@@ -634,14 +599,14 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                       setQuestions(questions.map(q => q.id === activeQuestion.id ? { ...q, prompt: newP } : q));
                     }}
                     onBlur={() => handleSaveQuestionAnswer(activeQuestion.id, activeQuestion.answer)}
-                    className="form-input"
-                    style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.5, resize: 'vertical' }}
+                    className="form-input scholarship-active-prompt-input"
                   />
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, fontSize: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Max Word Limit:</span>
+                  <div className="scholarship-answer-meta">
+                    <div className="scholarship-word-limit">
+                      <label htmlFor="scholarship-max-words">Max word limit</label>
                       <input
+                        id="scholarship-max-words"
                         type="number"
                         value={activeQuestion.maxWords}
                         onChange={e => {
@@ -649,48 +614,29 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                           setQuestions(questions.map(q => q.id === activeQuestion.id ? { ...q, maxWords: limit } : q));
                         }}
                         className="form-input"
-                        style={{ width: 80, padding: '4px 8px', fontSize: 12, textAlign: 'center' }}
                       />
                     </div>
 
                     {/* Word Count Indicator Badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="scholarship-word-count-group">
                       <span
-                        className={`badge ${
-                          isOverWordLimit
-                            ? 'badge-danger'
-                            : wordCount > 0
-                            ? 'badge-success'
-                            : ''
-                        }`}
-                        style={{
-                          fontSize: 12,
-                          padding: '4px 10px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          background: isOverWordLimit ? 'rgba(239, 68, 68, 0.15)' : wordCount > 0 ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-secondary)',
-                          color: isOverWordLimit ? 'var(--accent-red)' : wordCount > 0 ? 'var(--accent-green)' : 'var(--text-muted)',
-                          border: '1px solid',
-                          borderColor: isOverWordLimit ? 'var(--accent-red)' : wordCount > 0 ? 'var(--accent-green)' : 'var(--border-secondary)',
-                        }}
+                        className={`scholarship-word-count ${isOverWordLimit ? 'over-limit' : wordCount > 0 ? 'has-words' : ''}`}
                       >
                         {isOverWordLimit ? <AlertCircle size={13} /> : <CheckCircle size={13} />}
                         {wordCount} / {activeQuestion.maxWords} Words
                       </span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({activeQuestion.answer.length} chars)</span>
+                      <span className="scholarship-char-count">{activeQuestion.answer.length} characters</span>
                     </div>
                   </div>
                 </div>
 
                 {/* AI Action Toolbar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: 12, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-secondary)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div className="scholarship-ai-toolbar">
+                  <div className="scholarship-ai-actions">
                     <button
                       onClick={handleGenerateAiDraft}
                       disabled={isAiGenerating || isAiTrimming || isAiCritiquing}
-                      className="btn btn-primary btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      className="btn btn-primary btn-sm scholarship-ai-primary"
                     >
                       <Wand2 size={14} className={isAiGenerating ? 'animate-spin' : ''} />
                       {isAiGenerating ? 'Generating Draft...' : 'Generate AI Draft'}
@@ -699,8 +645,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                     <button
                       onClick={handleTrimEssay}
                       disabled={!activeQuestion.answer.trim() || isAiGenerating || isAiTrimming || isAiCritiquing}
-                      className="btn btn-ghost btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid var(--border-secondary)' }}
+                      className="btn btn-ghost btn-sm scholarship-ai-secondary"
                     >
                       <Scissors size={14} style={{ color: 'var(--accent-amber)' }} />
                       {isAiTrimming ? 'Trimming...' : 'Trim to Word Limit'}
@@ -709,8 +654,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                     <button
                       onClick={handleCritiqueEssay}
                       disabled={!activeQuestion.answer.trim() || isAiGenerating || isAiTrimming || isAiCritiquing}
-                      className="btn btn-ghost btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid var(--border-secondary)' }}
+                      className="btn btn-ghost btn-sm scholarship-ai-secondary"
                     >
                       <Sparkles size={14} style={{ color: 'var(--accent-purple)' }} />
                       {isAiCritiquing ? 'Reviewing...' : 'AI Quality Review'}
@@ -720,8 +664,7 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                   <button
                     onClick={() => handleCopyText(activeQuestion.answer, activeQuestion.id)}
                     disabled={!activeQuestion.answer.trim()}
-                    className="btn btn-ghost btn-sm"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid var(--border-secondary)' }}
+                    className="btn btn-ghost btn-sm scholarship-copy-button"
                   >
                     {copiedId === activeQuestion.id ? <Check size={14} style={{ color: 'var(--accent-green)' }} /> : <Copy size={14} />}
                     {copiedId === activeQuestion.id ? 'Copied!' : 'Copy for Portal'}
@@ -729,8 +672,9 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                 </div>
 
                 {/* Main Answer Textarea */}
-                <div>
+                <div className="scholarship-answer-editor-wrap">
                   <textarea
+                    aria-label="Essay answer"
                     rows={14}
                     placeholder="Your essay response will appear here. You can type directly or click 'Generate AI Draft' to pull from your background stories and resume..."
                     value={activeQuestion.answer}
@@ -739,24 +683,13 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
                       setQuestions(questions.map(q => q.id === activeQuestion.id ? { ...q, answer: newText } : q));
                     }}
                     onBlur={e => handleSaveQuestionAnswer(activeQuestion.id, e.target.value)}
-                    className="form-input"
-                    style={{
-                      width: '100%',
-                      padding: 16,
-                      fontSize: 14,
-                      lineHeight: 1.7,
-                      minHeight: 280,
-                      background: 'var(--bg-input)',
-                      color: 'var(--text-primary)',
-                      borderRadius: 'var(--radius-md)',
-                      resize: 'vertical',
-                    }}
+                    className="form-input scholarship-answer-editor"
                   />
                 </div>
 
                 {/* AI Critique Feedback Panel */}
                 {critiqueResult && (
-                  <div style={{ padding: 20, background: 'rgba(99, 102, 241, 0.08)', border: '1px solid var(--accent-primary)', borderRadius: 'var(--radius-md)' }}>
+                  <div className="scholarship-critique-panel">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid rgba(99, 102, 241, 0.2)' }}>
                       <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                         <Sparkles size={16} /> AI Review Score: {critiqueResult.score} / 100
@@ -805,51 +738,48 @@ export default function ScholarshipDetailPage({ params }: { params: Promise<{ id
           isOpen={isNewQuestionModalOpen}
           onClose={() => setIsNewQuestionModalOpen(false)}
           maxWidth={540}
-          title="Add Essay Question / Prompt"
+          className="scholarship-question-modal"
+          subtitle="Add another essay prompt to this application workspace."
+          title={
+            <div className="editor-modal-title">
+              <span className="editor-modal-icon"><BookOpen size={17} /></span>
+              <span><small>ESSAY WORKSPACE</small><strong>Add an essay prompt</strong></span>
+            </div>
+          }
+          footer={
+            <div className="editor-modal-footer">
+              <span className="editor-modal-footnote">You can revise the prompt and word limit later.</span>
+              <div className="editor-modal-footer-actions">
+                <button type="button" onClick={() => setIsNewQuestionModalOpen(false)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" form="scholarship-question-form" className="btn btn-primary"><Plus size={15} /> Add prompt</button>
+              </div>
+            </div>
+          }
         >
-          <form onSubmit={handleAddQuestion} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form id="scholarship-question-form" onSubmit={handleAddQuestion} className="scholarship-question-form">
+            <div className="question-form-intro"><strong>Keep the original question clear</strong><span>Use the same wording and word limit as the scholarship application.</span></div>
             <div>
-              <label className="form-label">
-                Question Prompt *
-              </label>
+              <label className="form-label" htmlFor="new-scholarship-prompt">Question prompt <span className="required-mark">Required</span></label>
               <textarea
+                id="new-scholarship-prompt"
                 required
                 rows={3}
                 placeholder="e.g. Describe a time you solved a complex technical problem or demonstrated leadership in cybersecurity."
                 value={newPrompt}
                 onChange={e => setNewPrompt(e.target.value)}
-                className="form-input"
-                style={{ width: '100%', fontSize: 13 }}
+                className="form-input scholarship-question-prompt-input"
               />
             </div>
 
             <div>
-              <label className="form-label">
-                Max Word Limit
-              </label>
+              <label className="form-label" htmlFor="new-scholarship-max-words">Maximum word limit</label>
               <input
+                id="new-scholarship-max-words"
                 type="number"
                 value={newMaxWords}
                 onChange={e => setNewMaxWords(parseInt(e.target.value) || 300)}
                 className="form-input"
-                style={{ width: '100%', fontSize: 13 }}
               />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border-secondary)' }}>
-              <button
-                type="button"
-                onClick={() => setIsNewQuestionModalOpen(false)}
-                className="btn btn-ghost"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
-                Add Prompt
-              </button>
             </div>
           </form>
         </Modal>

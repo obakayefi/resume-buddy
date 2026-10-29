@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -35,15 +35,33 @@ export default function Modal({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (closeOnEsc && e.key === 'Escape') {
+        e.stopPropagation();
         onClose();
+      } else if (e.key === 'Tab') {
+        const dialog = dialogRef.current;
+        const focusable = dialog?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        if (!focusable?.length) { e.preventDefault(); dialog?.focus(); return; }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!dialog?.contains(document.activeElement)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     },
     [closeOnEsc, onClose]
   );
+  const generatedId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => {
+      const target = dialogRef.current?.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') || dialogRef.current;
+      target?.focus();
+    });
     window.addEventListener('keydown', handleKeyDown);
     // Prevent background scrolling when modal is open
     const originalOverflow = document.body.style.overflow;
@@ -52,6 +70,7 @@ export default function Modal({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
+      previousFocusRef.current?.focus();
     };
   }, [isOpen, handleKeyDown]);
 
@@ -63,13 +82,11 @@ export default function Modal({
     <div
       className="modal-overlay"
       onClick={closeOnOverlayClick ? onClose : undefined}
-      role="dialog"
-      aria-modal="true"
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        backgroundColor: 'rgba(17, 24, 39, 0.52)',
+        backdropFilter: 'blur(5px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -79,7 +96,13 @@ export default function Modal({
       }}
     >
       <div
+        ref={dialogRef}
         className={`modal ${className}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? `${generatedId}-title` : undefined}
+        aria-describedby={subtitle ? `${generatedId}-subtitle` : undefined}
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--bg-card)',
@@ -88,7 +111,7 @@ export default function Modal({
           boxShadow: 'var(--shadow-lg)',
           width: '100%',
           maxWidth: resolvedMaxWidth,
-          maxHeight: '90vh',
+          maxHeight: 'min(90dvh, 900px)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -109,15 +132,9 @@ export default function Modal({
             }}
           >
             <div>
-              {typeof title === 'string' ? (
-                <h2 className="modal-title" style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                  {title}
-                </h2>
-              ) : (
-                title
-              )}
+              {title && (typeof title === 'string' ? <h2 id={`${generatedId}-title`} className="modal-title">{title}</h2> : <div id={`${generatedId}-title`} className="modal-title">{title}</div>)}
               {subtitle && (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, margin: 0 }}>
+                <p id={`${generatedId}-subtitle`} style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, margin: 0 }}>
                   {subtitle}
                 </p>
               )}

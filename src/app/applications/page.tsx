@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AppTopbar from '@/components/AppTopbar';
 import { Briefcase, Eye, Trash2, X, FileText, Download, Target, Sparkles, Send, Plus, Search, ChevronRight, CheckCircle2 } from 'lucide-react';
 import type { ApplicationData, MasterResumeData, OptimizedBullet } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import PDFDownloadButton from '@/components/PDFDownloadButton';
 import Link from 'next/link';
+import { useConfirmDialog } from '@/components/ui';
 
 const COLUMN_CONFIG: { status: string; title: string; color: string; dotBg: string }[] = [
   { status: 'saved', title: 'Drafts', color: 'var(--text-muted)', dotBg: '#64748b' },
@@ -16,12 +18,33 @@ const COLUMN_CONFIG: { status: string; title: string; color: string; dotBg: stri
   { status: 'rejected', title: 'Rejected', color: 'var(--accent-red)', dotBg: '#ef4444' },
 ];
 
+function cleanCoverLetter(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^###\s*$/gm, '')
+    .replace(/^#+\s+/gm, '')
+    .replace(/^\s*(#|\*\*)*\s*cover letter:?\s*(#|\*\*)*\s*\n+/i, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function parseOptimizedResume(value: string): { bullets: OptimizedBullet[]; resume?: MasterResumeData } {
+  if (!value) return { bullets: [] };
+  const parsed = JSON.parse(value);
+  if (Array.isArray(parsed)) return { bullets: parsed as OptimizedBullet[] };
+  return {
+    bullets: Array.isArray(parsed?.bullets) ? parsed.bullets as OptimizedBullet[] : [],
+    resume: parsed?.resume && typeof parsed.resume === 'object' ? parsed.resume as MasterResumeData : undefined,
+  };
+}
+
 export default function ApplicationsPage() {
   const [apps, setApps] = useState<ApplicationData[]>([]);
   const [resumes, setResumes] = useState<MasterResumeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<ApplicationData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   const fetchData = useCallback(async () => {
     try {
@@ -57,7 +80,7 @@ export default function ApplicationsPage() {
   };
 
   const deleteApp = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this application?')) return;
+    if (!await confirm({ title: 'Delete application?', description: 'This will remove the application and its saved details.', confirmLabel: 'Delete application' })) return;
     try {
       await fetch(`/api/applications/${id}`, { method: 'DELETE' });
       fetchData();
@@ -74,6 +97,8 @@ export default function ApplicationsPage() {
       a.jobTitle?.toLowerCase().includes(q)
     );
   }, [apps, searchQuery]);
+  const activeCount = apps.filter((app) => app.status === 'applied' || app.status === 'interviewing').length;
+  const offerCount = apps.filter((app) => app.status === 'offer').length;
 
   const renderKanbanColumn = (config: typeof COLUMN_CONFIG[0]) => {
     const columnApps = filteredApps.filter(a => a.status === config.status);
@@ -177,13 +202,15 @@ export default function ApplicationsPage() {
                   {(() => {
                     if (!app.optimizedResume || app.optimizedResume === '') return null;
                     const linkedResume = resumes.find(r => r.id === app.masterResumeId);
-                    if (!linkedResume) return null;
                     try {
-                      const bullets = JSON.parse(app.optimizedResume);
+                      const savedOutput = parseOptimizedResume(app.optimizedResume);
+                      const resumeForDownload = savedOutput.resume || linkedResume;
+                      if (!resumeForDownload) return null;
                       return (
                         <PDFDownloadButton 
-                          resume={linkedResume} 
-                          optimizedBullets={bullets} 
+                          resume={resumeForDownload}
+                          optimizedBullets={savedOutput.bullets}
+                          optimizedSummary={app.optimizedSummary}
                         />
                       );
                     } catch (e) {
@@ -202,12 +229,14 @@ export default function ApplicationsPage() {
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content" style={{ padding: '32px 40px' }}>
+      <AppTopbar />
+      {confirmDialog}
+      <main className="main-content applications-content" style={{ padding: '32px 40px' }}>
         
         {/* Top Page Header */}
-        <div className="page-header" style={{ borderBottom: '1px solid var(--border-primary)', paddingBottom: 24, marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="page-header applications-page-header">
           <div>
-            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <h1 className="page-title applications-page-title">
               <Briefcase size={28} style={{ color: 'var(--accent-primary)' }} /> Job Application Tracker
             </h1>
             <p className="page-subtitle">
@@ -215,35 +244,34 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <div className="applications-header-actions">
             <Link
               href="/lab"
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+              className="btn btn-primary applications-new-button"
             >
-              <Plus size={18} /> New Application in The Lab
+              <Plus size={17} /> New application
             </Link>
           </div>
         </div>
 
         {/* Filter & Metric Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
-          <div style={{ position: 'relative', width: 320, maxWidth: '100%' }}>
-            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <div className="applications-toolbar">
+          <div className="applications-search">
+            <Search size={16} aria-hidden="true" />
             <input
               type="text"
               placeholder="Search company or job title..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="form-input"
-              style={{ paddingLeft: 36, width: '100%', fontSize: 13 }}
+              aria-label="Search applications by company or job title"
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, color: 'var(--text-muted)' }}>
-            <span>Total: <strong style={{ color: 'var(--text-primary)' }}>{apps.length}</strong></span>
-            <span>Active: <strong style={{ color: 'var(--accent-blue)' }}>{apps.filter(a => a.status === 'applied' || a.status === 'interviewing').length}</strong></span>
-            <span>Offers: <strong style={{ color: 'var(--accent-green)' }}>{apps.filter(a => a.status === 'offer').length}</strong></span>
+          <div className="applications-summary" aria-label="Application totals">
+            <span>Total <strong>{apps.length}</strong></span>
+            <span>Active <strong>{activeCount}</strong></span>
+            <span>Offers <strong>{offerCount}</strong></span>
           </div>
         </div>
 
@@ -261,15 +289,14 @@ export default function ApplicationsPage() {
               Launch The Lab
             </Link>
           </div>
+        ) : filteredApps.length === 0 ? (
+          <div className="applications-no-results">
+            <Search size={20} />
+            <strong>No matching applications</strong>
+            <span>Try a different company or job title.</span>
+          </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(280px, 1fr))',
-            gap: 16,
-            overflowX: 'auto',
-            paddingBottom: 24,
-            alignItems: 'start',
-          }}>
+          <div className="applications-board">
             {COLUMN_CONFIG.map(config => renderKanbanColumn(config))}
           </div>
         )}
@@ -293,10 +320,13 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
 }) {
   const [activeTab, setActiveTab] = useState<'resume' | 'cover' | 'outreach' | 'job'>('resume');
   let optimizedBullets: OptimizedBullet[] = [];
+  let savedResume: MasterResumeData | undefined;
   let generationTimes: Record<string, number> = {};
   
   try {
-    optimizedBullets = app.optimizedResume ? JSON.parse(app.optimizedResume) : [];
+    const savedOutput = parseOptimizedResume(app.optimizedResume);
+    optimizedBullets = savedOutput.bullets;
+    savedResume = savedOutput.resume;
     if (app.generationTimes) {
       generationTimes = typeof app.generationTimes === 'string' ? JSON.parse(app.generationTimes) : app.generationTimes;
     }
@@ -431,8 +461,8 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
                       <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Sparkles size={14} style={{ color: 'var(--accent-green)' }} /> Optimized Experience Bullets
                       </h3>
-                      {masterResume && (
-                        <PDFDownloadButton resume={masterResume} optimizedBullets={optimizedBullets} />
+                      {(savedResume || masterResume) && (
+                        <PDFDownloadButton resume={savedResume || masterResume!} optimizedBullets={optimizedBullets} optimizedSummary={app.optimizedSummary} />
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -469,7 +499,8 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
                     <button 
                       className="btn btn-ghost btn-sm" 
                       onClick={() => {
-                        const blob = new Blob([app.coverLetter], { type: 'text/plain' });
+                        const cleaned = cleanCoverLetter(app.coverLetter);
+                        const blob = new Blob([cleaned], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -488,12 +519,12 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
                     borderRadius: 'var(--radius-md)', 
                     fontSize: 14, 
                     lineHeight: 1.7, 
-                    fontFamily: 'serif', 
+                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                     color: 'var(--text-primary)', 
                     whiteSpace: 'pre-wrap',
                     boxShadow: 'var(--shadow-sm)'
                   }}>
-                    {app.coverLetter}
+                    {cleanCoverLetter(app.coverLetter)}
                   </div>
                 </div>
               ) : (

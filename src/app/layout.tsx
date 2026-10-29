@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Resume Buddy — AI Resume Optimizer",
-  description: "Local-first AI-powered resume optimizer. Tailor your resume to any job description, get ATS scores, and generate cover letters — all privately on your machine.",
+  title: "Applikator - AI Career Application Workspace",
+  description: "A local-first AI workspace for tailoring resumes, tracking applications, and preparing stronger job applications privately on your machine.",
+  icons: {
+    icon: "/applikator-icon.svg",
+    shortcut: "/applikator-icon.svg",
+    apple: "/applikator-icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -20,43 +20,63 @@ Score criteria:
 - 50-69: Moderate match, needs optimization
 - 30-49: Weak match, significant gaps
 - 0-29: Poor match`,
-  'optimize': `You are an expert resume writer specializing in ATS optimization. Rewrite both the professional summary and the resume bullet points to better align with the job description while keeping factual accuracy.
+  'optimize': `You are an elite Applicant Tracking System (ATS) optimization specialist, executive resume architect, and Staff Engineering Leader.
+Your mission is to optimize the candidate's resume content to achieve a 95%+ ATS match score against the provided Job Description, outranking competing candidates in enterprise ATS algorithms (Workday, Greenhouse, Lever, Taleo) while creating an exceptionally impressive, high-caliber impression on hiring managers and CTOs.
 
-You MUST respond with ONLY valid JSON in this exact format, no other text:
+CORE ATS OPTIMIZATION MANDATES:
+
+1. PROFESSIONAL SUMMARY (ELITE EXECUTIVE & TECHNICAL IMPACT STANDARD):
+   - CRAFT AN IMPRESSIVE, COMPELLING SUMMARY: Never write a dry, bland, or cookie-cutter summary. It must immediately establish the candidate as a top-tier engineer, technical leader, and strategic problem-solver.
+   - SENTENCE 1 (THE POWER HOOK & LEADERSHIP IDENTITY): Open with high authority, matching the exact target role/seniority level. State total years of experience, core engineering specialization, and high-stakes problem-solving capacity (e.g., "High-impact Senior Software Engineer & Technical Lead with 6+ years of experience architecting distributed, mission-critical systems and high-throughput web platforms.").
+   - SENTENCE 2 (DEEP TECHNICAL RELEVANCE TO JD): Showcase deep mastery across the exact architectural pillars and core technologies demanded in the Job Description (e.g., full-stack React/Next.js, TypeScript, cloud-native microservices, GraphQL/REST APIs, real-time data streaming, and scalable database systems).
+   - SENTENCE 3 (QUANTIFIABLE ENGINEERING & BUSINESS TRIUMPHS): Highlight concrete, metric-driven achievements pulled directly from the candidate's background (e.g., reducing API response times by 30-40%, boosting user engagement by 20%, accelerating transaction throughput, driving 90%+ client retention).
+   - SENTENCE 4 (COLLABORATIVE VELOCITY & ARCHITECTURAL INTEGRITY): Close with the candidate's ability to drive zero-to-one product velocity, establish engineering best practices, mentor high-performing teams, and ensure enterprise-grade security and data isolation.
+   - TONE: Confident, sophisticated, impactful, and commanding. Strictly ban empty filler words ("passionate", "detail-oriented", "hardworking", "motivated", "results-driven").
+
+2. EXPERIENCE BULLET POINTS (THE GOOGLE XYZ & STAR FORMULA):
+   - Rewrite EVERY bullet using the formula: [High-Power Action Verb] + [Context & Specific Technical Deliverable with JD Keywords] + [Quantifiable Metric / Measurable Outcome].
+   - Examples of high-power verbs: Architected, Engineered, Spearheaded, Orchestrated, Optimized, Deployed, Automated, Scaled, Streamlined.
+   - Seamlessly integrate critical keywords from the JD (technologies, architectures, cloud platforms, methodologies) directly into the bullets where technically truthful to the candidate's domain.
+   - Sharpen quantifiable metrics (% reduction in API latency, % increase in user retention, transaction throughput, sprint velocity, uptime, load time drops).
+   - Preserve real companies, roles, and project facts — do not invent fictional employers or degrees.
+
+You MUST respond with ONLY valid JSON in this exact structure, with no surrounding markdown or extra text:
 {
-  "optimizedSummary": "rewritten professional summary emphasizing relevant experience and keywords",
+  "optimizedSummary": "The rewritten impressive, high-density executive ATS professional summary...",
   "bullets": [
     {
-      "original": "original bullet text",
-      "optimized": "rewritten bullet text incorporating relevant JD keywords",
+      "original": "exact or key original bullet text",
+      "optimized": "The ATS-optimized, metric-driven replacement bullet incorporating JD keywords",
       "relevance": "high"
     }
   ]
 }
 
 Rules:
-- Keep factual information accurate
-- Mirror terminology from the job description
-- Use strong action verbs
-- Include quantifiable results where possible
-- Mark relevance as "high", "medium", or "low"`,
-  'cover-letter': `Act as a senior technical copywriter and engineering lead. Your goal is to write an exceptionally high-conversion, peer-to-peer cover letter that bridges the gap between the candidate's specific achievements and the company's technical challenges.
+- Mark relevance as "high", "medium", or "low".
+- Optimize each bullet from the candidate's experience to maximize ATS keyword relevance and impact.
+- Keep output strictly parseable JSON.`,
+  'cover-letter': `Act as a senior executive career strategist adhering strictly to the prestigious Harvard Office of Career Services (OCS) business standard. Your objective is to compose an exceptionally articulate, high-impact, and publication-ready cover letter.
 
-WRITING RULES (STRICT ADHERENCE):
-1. NO SOFT OPENERS: Never start with "I am writing to...", "I am interested in...", or "I am thrilled...". Start with a direct observation about the company's product, a technical challenge they face, or a specific goal mentioned in the JD.
-2. BAN ALL FLUFF: Do not use words like "passionate", "motivated", "innovative", "ideal", or "pleased". Eliminate all adverbs (e.g., "highly", "very").
-3. THE EVIDENCE: For every claim, provide a metric-backed achievement. "I improved performance" becomes "I reduced latency by 40% using [tech]".
-4. ASYNC-FIRST: Explicitly mention the candidate's effectiveness in distributed, async environments and their ability to drive projects with minimal supervision.
-5. ASSERTIVE CLOSING: Close with a technical question or a direct call to action (e.g., "What is your roadmap for [X]?" or "I'd like to discuss how I can apply [Y] to your [Z] problem."). Never say "Thank you for your time" or "I look forward to...".
-6. TONE: Confident, peer-to-peer, and zero-gravity (not submissive). You are a solution-provider, not a supplicant.
+HARVARD STANDARD REQUIREMENTS:
+1. BUSINESS LETTER STRUCTURE:
+   - Header: Candidate Name and Contact Details.
+   - Date: Formal date (e.g., Month Day, Year).
+   - Recipient Block: Hiring Team / [Company Name].
+   - Formal Salutation: "Dear [Company Name] Hiring Team," (or specified recruiter name).
+   - Opening Paragraph: State the exact position applied for, establish high-caliber engineering credentials and technical identity, and state a compelling, strategic value proposition for the company.
+   - Body Paragraph 1 (Core Technical Impact): Highlight 2-3 specific, metric-backed achievements from the resume (e.g., latency reduction, performance optimization, scale) seamlessly mapped to the company's technical requirements and tech stack in the Job Description.
+   - Body Paragraph 2 (Architectural Ownership & Team Velocity): Articulate how the candidate's engineering rigor, async-first collaboration, system design, and mentoring elevate team velocity and solve the company's scaling challenges.
+   - Closing Paragraph: Reiterate enthusiasm for the company's product trajectory, express confidence in contributing immediate value, invite an interview/technical conversation, and include "Thank you for your time and consideration."
+   - Formal Sign-off: "Sincerely," followed by the candidate's full name.
 
-STRUCTURE:
-- PARA 1: The Hook (Directly address the company's current reality/scaling context).
-- PARA 2: The Core Evidence (The single most impressive achievement from the resume that matches their primary pain point).
-- PARA 3: Technical Culture (Why the candidate's specific workflow/stack ensures immediate velocity).
-- PARA 4: The Direct Closing (One assertive sentence).
-
-Output ONLY the letter in clean Markdown. No subject line. No title. Max 350 words.`,
+2. STRICT FORMATTING & QUALITY RULES:
+   - CRITICAL: Absolutely NO markdown headers (#, ##, ###), NO bold paragraph labels (e.g. do NOT write "**Paragraph 1:**"), NO bullet points, and NO horizontal rules.
+   - Never output empty headings or "### ".
+   - Write in elegant, flowing prose paragraphs separated by standard double newlines.
+   - Do NOT ask rhetorical quiz questions or interrogation questions to the employer (e.g., never say "What is your roadmap for [X]?").
+   - Maintain an authoritative, respectful, peer-level executive voice. Avoid generic fluff ("passionate", "go-getter") and submissive language.
+   - Output ONLY the finished letter text without any introductory pleasantries or meta-commentary.`,
   'linkedin-message': `Act as an expert Technical Copywriter. Write a short, assertive LinkedIn connection request message from a Senior Full Stack Engineer to a recruiter or hiring manager.
 
 RULES:
@@ -130,16 +150,34 @@ async function getActualModel(url: string, preferredModel: string): Promise<stri
 
 export async function POST(request: Request) {
   try {
-    const { resume, jobDescription, action, company, jobTitle, extraInfo, recruiterName, messages, baseUrl, model } = await request.json();
+    const {
+      resume,
+      jobDescription,
+      action,
+      company,
+      jobTitle,
+      extraInfo,
+      recruiterName,
+      messages,
+      baseUrl,
+      model,
+      candidateName,
+      candidateEmail,
+      candidatePhone,
+      candidateLocation,
+      candidateWebsite,
+      candidateLinkedin,
+    } = await request.json();
 
-    const settingsObj = await prisma.settings.findUnique({ where: { id: 'default' } });
+    let settingsObj = null;
     let actionConfig: Record<string, { model?: string; prompt?: string }> = {};
-    if (settingsObj?.actionConfig) {
-      try {
+    try {
+      settingsObj = await prisma.settings.findUnique({ where: { id: 'default' } });
+      if (settingsObj?.actionConfig) {
         actionConfig = JSON.parse(settingsObj.actionConfig);
-      } catch (e) {
-        // Safe fail
       }
+    } catch (dbErr) {
+      console.warn('Could not read settings from DB (using defaults / client params):', (dbErr as any)?.message || dbErr);
     }
 
     const ollamaUrl = baseUrl || settingsObj?.ollamaBaseUrl || 'http://127.0.0.1:11434';
@@ -172,12 +210,89 @@ export async function POST(request: Request) {
       }
 
       case 'optimize': {
-        prompt = `RESUME:\n${resume}\n\nJOB DESCRIPTION:\n${jobDescription}\n\nRewrite the professional summary and resume bullet points to match the JD. Return ONLY JSON.`;
+        prompt = `CANDIDATE RESUME:
+${resume}
+
+TARGET JOB DESCRIPTION:
+${jobDescription}
+${company ? `TARGET COMPANY: ${company}\n` : ''}${jobTitle ? `TARGET ROLE: ${jobTitle}\n` : ''}
+
+TASK:
+1. Craft an exceptionally impressive, authoritative, and compelling Professional Summary (3-4 sentences) that immediately highlights the candidate as a senior-tier engineering powerhouse, weaves in the exact core technologies and architectural pillars from the Job Description, and features quantifiable metrics and leadership scope.
+2. Rewrite each relevant experience bullet point using the Google XYZ formula ([Action Verb] + [Technical Deliverable with JD Keywords] + [Measurable Metric]).
+
+Return ONLY valid JSON.`;
         break;
       }
 
       case 'cover-letter': {
-        prompt = `RESUME:\n${resume}\n\nJOB DESCRIPTION:\n${jobDescription}\n\nCOMPANY: ${company}\nJOB TITLE: ${jobTitle}\n\nUsing the resume as the source of achievements and the JD as the target, write a high-conversion cover letter following your rules. Pull specific metrics and outcomes from the resume to prove fit.`;
+        const currentDate = new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        const cName = (candidateName || '').trim() || 'Emmanuel Giwa';
+        const contactItems = [
+          candidateLocation,
+          candidatePhone,
+          candidateEmail,
+          candidateWebsite,
+          candidateLinkedin,
+        ].filter(Boolean);
+        const contactLine = contactItems.join(' | ');
+        const targetCompany = company?.trim() || 'the Company';
+        const targetTitle = jobTitle?.trim() || 'Software Engineer';
+        const salutation = recruiterName?.trim()
+          ? `Dear ${recruiterName.trim()},`
+          : `Dear ${targetCompany} Hiring Team,`;
+
+        prompt = `CANDIDATE PROFILE:
+Name: ${cName}
+Contact Details: ${contactLine}
+Current Date: ${currentDate}
+
+TARGET OPPORTUNITY:
+Target Company: ${targetCompany}
+Target Role: ${targetTitle}
+Salutation to Use: ${salutation}
+
+CANDIDATE MASTER RESUME:
+${resume}
+
+TARGET JOB DESCRIPTION:
+${jobDescription}
+
+TASK:
+Write an authoritative, publication-ready Harvard Standard Cover Letter for ${cName} applying for ${targetTitle} at ${targetCompany}.
+
+LETTER STRUCTURE TO FOLLOW STRICTLY:
+${cName}
+${contactLine}
+
+${currentDate}
+
+Hiring Team
+${targetCompany}
+
+${salutation}
+
+[Opening Paragraph: Clear statement of the position, candidate's senior technical profile and years of experience, and a compelling strategic value proposition for ${targetCompany}.]
+
+[Body Paragraph 1 - Technical Impact & Evidence: 2-3 specific, metric-backed achievements from the resume such as latency reductions, load time optimizations, or system architecture, directly aligned with the core technical stack and requirements from the Job Description.]
+
+[Body Paragraph 2 - Systems, Velocity & Execution: How the candidate drives engineering velocity, async-first collaboration, architectural scalability, and mentorship to solve ${targetCompany}'s challenges from day one.]
+
+[Closing Paragraph: Reiterate alignment with ${targetCompany}'s mission, invite an interview to discuss how candidate's background supports their roadmap, and conclude with "Thank you for your time and consideration."]
+
+Sincerely,
+
+${cName}
+
+MANDATORY RULES:
+- DO NOT use markdown headers (#, ##, ###), bold section labels, bullet points, or horizontal rules.
+- Under NO circumstances output empty headers or "### ".
+- Do NOT ask rhetorical or interrogation questions to the hiring manager.
+- Output ONLY the formatted letter. No preamble, no conversational intro.`;
         break;
       }
 

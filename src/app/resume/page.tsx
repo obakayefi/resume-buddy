@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
-import { Save, Plus, Trash2, Edit2, AlertCircle, FileText, GraduationCap, Briefcase, Award, Globe, Link, ExternalLink } from 'lucide-react';
+import AppTopbar from '@/components/AppTopbar';
+import { Save, Plus, Trash2, Edit2, FileText, GraduationCap, Briefcase, Award, Globe, Link, ExternalLink } from 'lucide-react';
 import type { MasterResumeData, Experience, Education, SkillGroup, Project, Certification } from '@/lib/types';
+import { useConfirmDialog } from '@/components/ui';
 
 export default function ResumePage() {
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [resumes, setResumes] = useState<MasterResumeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,7 +94,7 @@ export default function ResumePage() {
 
   const handleDelete = async () => {
     if (!activeResume?.id) return;
-    if (!confirm('Are you sure you want to delete this master resume? This cannot be undone.')) return;
+    if (!await confirm({ title: 'Delete master resume?', description: 'This cannot be undone. Any linked optimized resumes may no longer have a source resume.', confirmLabel: 'Delete resume' })) return;
     
     try {
       const res = await fetch(`/api/resumes/${activeResume.id}`, { method: 'DELETE' });
@@ -324,15 +327,18 @@ export default function ResumePage() {
   return (
     <div className="app-layout">
       <Sidebar />
+      <AppTopbar />
+      {confirmDialog}
       <main className="main-content">
-        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="page-header resume-page-header">
           <div>
-            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="resume-page-eyebrow"><FileText size={14} /> YOUR CAREER PROFILE</div>
+            <h1 className="page-title resume-page-title">
               <FileText size={24} /> Master Resume
             </h1>
             <p className="page-subtitle">Manage your base experience for professional formatting</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="resume-page-actions">
              <button className="btn btn-ghost" onClick={createNewResume}>
               <Plus size={16} /> New Base
             </button>
@@ -348,12 +354,12 @@ export default function ResumePage() {
         </div>
 
         {error && (
-          <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', color: 'var(--accent-red)', borderRadius: 8, marginBottom: 20 }}>
+          <div role="alert" className="resume-feedback resume-feedback-error">
             {error}
           </div>
         )}
         {success && (
-          <div style={{ padding: 12, background: 'rgba(34,197,94,0.1)', color: 'var(--accent-green)', borderRadius: 8, marginBottom: 20 }}>
+          <div role="status" className="resume-feedback resume-feedback-success">
             {success}
           </div>
         )}
@@ -369,33 +375,44 @@ export default function ResumePage() {
             <button className="btn btn-primary" onClick={createNewResume} style={{ marginTop: 12 }}>Create One</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+          <div className="resume-editor-layout">
             
             {/* Resume Selector */}
-            {resumes.length > 0 && (
-               <div className="card" style={{ width: 250, padding: '16px 12px' }}>
-                <h3 style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 12, paddingLeft: 10 }}>Saved Bases</h3>
+            <aside className="resume-navigation-rail">
+              {resumes.length > 0 && (
+               <div className="resume-saved-list">
+                <h2>Saved bases <span>{resumes.length}</span></h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {resumes.map(r => (
                     <button
                       key={r.id}
-                      className={`nav-link ${r.id === activeResume.id ? 'active' : ''}`}
+                      className={`resume-saved-item ${r.id === activeResume.id ? 'active' : ''}`}
                       onClick={() => setActiveResume(r)}
                     >
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {r.name || 'Untitled'}
-                      </div>
+                      <FileText size={15} aria-hidden="true" />
+                      <span>{r.name || 'Untitled'}</span>
                     </button>
                   ))}
                 </div>
               </div>
-            )}
+              )}
+              <nav className="resume-section-nav" aria-label="Resume sections">
+                <h2>Resume sections</h2>
+                <a href="#resume-contact">Contact details</a>
+                <a href="#resume-summary">Professional summary</a>
+                <a href="#resume-skills">Skills & expertise</a>
+                <a href="#resume-experience">Experience</a>
+                <a href="#resume-projects">Projects</a>
+                <a href="#resume-education">Education</a>
+                <a href="#resume-certifications">Certifications</a>
+              </nav>
+            </aside>
 
             {/* Editor */}
-            <div className="card" style={{ flex: 1, padding: 32 }}>
+            <div className="card resume-editor-card">
               
               {/* Header Info */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-contact" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <h3 className="section-title-editor"><Edit2 size={16} /> Header & Contact</h3>
                 <div className="form-row">
                   <div className="form-group" style={{ flex: 2 }}>
@@ -447,7 +464,7 @@ export default function ResumePage() {
               </section>
 
               {/* Professional Summary */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-summary" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <h3 className="section-title-editor"><FileText size={16} /> Professional Summary</h3>
                 <textarea
                   className="form-textarea"
@@ -458,7 +475,7 @@ export default function ResumePage() {
               </section>
 
               {/* Categorized Skills */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-skills" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 className="section-title-editor" style={{ margin: 0 }}><Award size={16} /> Skills & Expertise</h3>
                   <button className="btn btn-ghost btn-sm" onClick={addSkillGroup}>
@@ -498,7 +515,7 @@ export default function ResumePage() {
               </section>
 
               {/* Experience */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-experience" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 className="section-title-editor" style={{ margin: 0 }}><Briefcase size={16} /> Experience</h3>
                   <button className="btn btn-ghost btn-sm" onClick={addExperience}>
@@ -525,8 +542,8 @@ export default function ResumePage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {exp.bullets.map((bullet, bIdx) => (
-                        <div key={bIdx} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                          <span style={{ marginTop: 10, color: 'var(--text-muted)' }}>●</span>
+                        <div key={bIdx} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <span style={{ display: 'inline-block', width: 5, height: 5, minWidth: 5, minHeight: 5, borderRadius: '50%', backgroundColor: 'var(--text-muted)', marginTop: 14, flexShrink: 0 }} />
                           <textarea 
                             className="form-textarea" 
                             style={{ minHeight: 40, padding: '8px 12px' }} 
@@ -547,7 +564,7 @@ export default function ResumePage() {
               </section>
 
               {/* Projects */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-projects" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 className="section-title-editor" style={{ margin: 0 }}><ExternalLink size={16} /> Projects</h3>
                   <button className="btn btn-ghost btn-sm" onClick={addProject}>
@@ -575,7 +592,7 @@ export default function ResumePage() {
               </section>
 
               {/* Education */}
-              <section style={{ marginBottom: 40 }}>
+              <section id="resume-education" className="resume-editor-section" style={{ marginBottom: 40 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 className="section-title-editor" style={{ margin: 0 }}><GraduationCap size={16} /> Education</h3>
                   <button className="btn btn-ghost btn-sm" onClick={addEducation}>
@@ -603,7 +620,7 @@ export default function ResumePage() {
               </section>
 
               {/* Certifications */}
-              <section>
+              <section id="resume-certifications" className="resume-editor-section">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <h3 className="section-title-editor" style={{ margin: 0 }}><Award size={16} /> Certifications</h3>
                   <button className="btn btn-ghost btn-sm" onClick={addCertification}>

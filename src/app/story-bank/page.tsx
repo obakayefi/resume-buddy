@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AppTopbar from '@/components/AppTopbar';
 import Modal from '@/components/Modal';
+import { SelectField, useConfirmDialog } from '@/components/ui';
 import { StoryBankItem } from '@/lib/types';
-import { Plus, Trash2, Edit2, Bookmark, Cpu, Shield, Users, Target, HelpCircle, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Bookmark, Cpu, Shield, Users, Target, HelpCircle, Check, X, Search, BookOpen, ArrowUpRight, FileText } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'AI', label: 'AI & Machine Learning', icon: Cpu, color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
@@ -16,9 +18,11 @@ const CATEGORIES = [
 ];
 
 export default function StoryBankPage() {
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [items, setItems] = useState<StoryBankItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<StoryBankItem | null>(null);
 
@@ -103,7 +107,7 @@ export default function StoryBankPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this story?')) return;
+    if (!await confirm({ title: 'Delete story?', description: 'This story will be permanently removed from your story bank.', confirmLabel: 'Delete story' })) return;
     try {
       const res = await fetch(`/api/story-bank?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -114,53 +118,53 @@ export default function StoryBankPage() {
     }
   };
 
-  const filteredItems = selectedCategory === 'All' 
-    ? items 
-    : items.filter(i => i.category === selectedCategory);
+  const query = searchQuery.trim().toLowerCase();
+  const filteredItems = items.filter((item) => {
+    const categoryMatch = selectedCategory === 'All' || item.category === selectedCategory;
+    const searchMatch = !query || `${item.title} ${item.category} ${item.content}`.toLowerCase().includes(query);
+    return categoryMatch && searchMatch;
+  });
+  const usedCategories = new Set(items.map((item) => item.category)).size;
+  const totalWords = items.reduce((sum, item) => sum + item.content.trim().split(/\s+/).filter(Boolean).length, 0);
 
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content" style={{ padding: '32px 40px' }}>
+      <AppTopbar />
+      {confirmDialog}
+      <main className="main-content story-bank-page">
         {/* Top Header */}
-        <div className="page-header" style={{ borderBottom: '1px solid var(--border-primary)', paddingBottom: 24, marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="page-header story-bank-header">
           <div>
-            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Bookmark size={28} style={{ color: 'var(--accent-primary)' }} />
-              Story Bank & Experience Vault
+            <div className="story-bank-eyebrow">YOUR EXPERIENCE LIBRARY</div>
+            <h1 className="page-title story-bank-title">
+              <Bookmark size={24} aria-hidden="true" /> Story Bank
             </h1>
             <p className="page-subtitle">
-              Store your core background stories, technical achievements, CTF labs, and project milestones to feed AI essay generators.
+              Keep your strongest examples ready for resumes, applications, and essays.
             </p>
           </div>
-          <button
-            onClick={handleOpenCreateModal}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
-          >
+          <button onClick={handleOpenCreateModal} className="btn btn-primary story-bank-add-button">
             <Plus size={18} />
-            Add Background Story
+            Add a story
           </button>
         </div>
 
+        <section className="story-bank-overview" aria-label="Story bank overview">
+          <div className="story-overview-card"><span className="story-overview-icon"><BookOpen size={17} /></span><span className="story-overview-label">Stories saved</span><strong>{items.length}</strong><small>Your personal experience library</small></div>
+          <div className="story-overview-card"><span className="story-overview-icon is-blue"><Bookmark size={17} /></span><span className="story-overview-label">Categories in use</span><strong>{usedCategories}<small> / {CATEGORIES.length}</small></strong><small>Different experience themes</small></div>
+          <div className="story-overview-card"><span className="story-overview-icon is-purple"><FileText size={17} /></span><span className="story-overview-label">Experience details</span><strong>{totalWords.toLocaleString()}</strong><small>Words ready to reuse</small></div>
+        </section>
+
         {/* Category Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
+        <section className="story-bank-tools" aria-label="Find stories">
+          <div className="story-category-list" role="group" aria-label="Filter by story category">
           <button
             onClick={() => setSelectedCategory('All')}
-            style={{
-              padding: '8px 16px',
-              cursor: 'pointer',
-              border: '1px solid',
-              borderColor: selectedCategory === 'All' ? 'var(--text-muted)' : 'var(--border-secondary)',
-              background: selectedCategory === 'All' ? 'var(--bg-elevated)' : 'var(--bg-secondary)',
-              color: selectedCategory === 'All' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 13,
-              fontWeight: 500,
-              transition: 'all 0.2s',
-            }}
+            className={`story-category-filter ${selectedCategory === 'All' ? 'active' : ''}`}
+            aria-pressed={selectedCategory === 'All'}
           >
-            All Stories ({items.length})
+            All stories <span>{items.length}</span>
           </button>
           {CATEGORIES.map(cat => {
             const count = items.filter(i => i.category === cat.id).length;
@@ -169,27 +173,25 @@ export default function StoryBankPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                style={{
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  border: '1px solid',
-                  borderColor: selectedCategory === cat.id ? 'var(--text-muted)' : 'var(--border-secondary)',
-                  background: selectedCategory === cat.id ? 'var(--bg-elevated)' : 'var(--bg-secondary)',
-                  color: selectedCategory === cat.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  transition: 'all 0.2s',
-                }}
+                className={`story-category-filter ${selectedCategory === cat.id ? 'active' : ''}`}
+                aria-pressed={selectedCategory === cat.id}
               >
                 <Icon size={14} />
-                {cat.label} ({count})
+                {cat.label} <span>{count}</span>
               </button>
             );
           })}
+          </div>
+          <label className="story-bank-search">
+            <Search size={16} aria-hidden="true" />
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search your stories" aria-label="Search stories" />
+            {searchQuery && <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search"><X size={14} /></button>}
+          </label>
+        </section>
+
+        <div className="story-results-heading">
+          <div><h2>Saved experiences</h2><span>{filteredItems.length} {filteredItems.length === 1 ? 'story' : 'stories'}</span></div>
+          <span>Use these details as source material in your applications <ArrowUpRight size={13} /></span>
         </div>
 
         {/* Grid of Story Cards */}
@@ -200,8 +202,8 @@ export default function StoryBankPage() {
         ) : filteredItems.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon"><Bookmark size={32} /></div>
-            <p className="empty-state-title">No Stories Yet</p>
-            <p className="empty-state-text">No stories added for this category yet.</p>
+            <p className="empty-state-title">{items.length === 0 ? 'Your story bank is ready' : 'No stories match these filters'}</p>
+            <p className="empty-state-text">{items.length === 0 ? 'Add a project, challenge, or achievement to start building your experience library.' : 'Try another category or search term to find a saved story.'}</p>
             <button
               onClick={handleOpenCreateModal}
               className="btn btn-ghost"
@@ -211,30 +213,29 @@ export default function StoryBankPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(440px, 1fr))', gap: 20 }}>
+          <div className="story-card-grid">
             {filteredItems.map(item => {
               const catInfo = CATEGORIES.find(c => c.id === item.category) || CATEGORIES[5];
               const Icon = catInfo.icon;
               return (
                 <div
                   key={item.id}
-                  className="card"
-                  style={{ padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}
+                  className="card story-card"
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                      <h3 style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>{item.title}</h3>
-                      <span className="badge" style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <div className="story-card-heading">
+                      <h3>{item.title}</h3>
+                      <span className={`story-category-badge category-${item.category}`}>
                         <Icon size={12} />
-                        {item.category}
+                        {catInfo.label}
                       </span>
                     </div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.6, background: 'var(--bg-secondary)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-secondary)', maxHeight: 200, overflowY: 'auto' }}>
+                    <div className="story-card-content">
                       {item.content}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid var(--border-secondary)', fontSize: 12, color: 'var(--text-muted)' }}>
+                  <div className="story-card-actions">
                     <button
                       onClick={() => handleOpenEditModal(item)}
                       className="btn btn-ghost btn-sm"
@@ -261,19 +262,30 @@ export default function StoryBankPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           maxWidth={640}
+          className="story-editor-modal"
+          subtitle="Capture the context, actions, and outcomes you may want to reuse later."
           title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Bookmark size={20} style={{ color: 'var(--accent-primary)' }} />
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {editingItem ? 'Edit Background Story' : 'Add Background Story'}
-              </span>
+            <div className="editor-modal-title">
+              <span className="editor-modal-icon"><Bookmark size={17} /></span>
+              <span><small>EXPERIENCE LIBRARY</small><strong>{editingItem ? 'Edit background story' : 'Add background story'}</strong></span>
+            </div>
+          }
+          footer={
+            <div className="editor-modal-footer">
+              <span className="editor-modal-footnote">Specific details make your stories more useful.</span>
+              <div className="editor-modal-footer-actions">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost">Cancel</button>
+                <button type="submit" form="story-editor-form" className="btn btn-primary"><Check size={15} /> {editingItem ? 'Save changes' : 'Save story'}</button>
+              </div>
             </div>
           }
         >
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <form id="story-editor-form" onSubmit={handleSave} className="story-form">
+            <div className="story-form-intro"><span>Build a reusable example</span><p>Include what you did, the tools or skills involved, and what changed because of your work.</p></div>
             <div>
-              <label className="form-label">Story Title / Heading</label>
+              <label className="form-label" htmlFor="story-title">Story title <span className="required-mark">Required</span></label>
               <input
+                id="story-title"
                 type="text"
                 required
                 placeholder="e.g. PyTorch LLM Model Project or Wireshark CTF Lab"
@@ -285,24 +297,24 @@ export default function StoryBankPage() {
             </div>
 
             <div>
-              <label className="form-label">Category</label>
-              <select
+              <SelectField
+                label="Category"
+                name="story-category"
+                options={CATEGORIES.map((category) => ({
+                  value: category.id,
+                  label: category.label,
+                  description: `Save this story under ${category.label.toLowerCase()}.`,
+                }))}
                 value={formCategory}
-                onChange={e => setFormCategory(e.target.value as any)}
-                className="form-select"
-                style={{ width: '100%' }}
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFormCategory(value as typeof formCategory)}
+                hint="Choose the theme that best describes this experience."
+              />
             </div>
 
             <div>
-              <label className="form-label">Detailed Experience & Key Metrics</label>
+              <label className="form-label" htmlFor="story-content">Experience and key details <span className="required-mark">Required</span></label>
               <textarea
+                id="story-content"
                 required
                 rows={6}
                 placeholder="Include specific tools used (PyTorch, Nmap, Docker), numbers/metrics (accuracy %, latency reduced, CTF rank), and outcomes achieved..."
@@ -311,23 +323,7 @@ export default function StoryBankPage() {
                 className="form-textarea"
                 style={{ width: '100%', resize: 'vertical' }}
               />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, paddingTop: 16, borderTop: '1px solid var(--border-secondary)' }}>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="btn btn-ghost"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-              >
-                <Check size={16} /> Save Story
-              </button>
+              <div className="story-content-guidance"><span>Context</span><span>Action</span><span>Outcome</span><small>{formContent.trim() ? formContent.trim().split(/\s+/).length : 0} words</small></div>
             </div>
           </form>
         </Modal>

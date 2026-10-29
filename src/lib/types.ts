@@ -1,4 +1,4 @@
-// Types for the Resume Buddy application
+// Types for the Applikator application
 
 export interface ContactInfo {
   name: string;
@@ -14,6 +14,7 @@ export interface ContactInfo {
 export interface Experience {
   id: string;
   company: string;
+  location?: string;
   title: string;
   startDate: string;
   endDate: string;
@@ -184,4 +185,3 @@ export const SCHOLARSHIP_STATUS_COLORS: Record<string, string> = {
   submitted: '#3b82f6',
   awarded: '#22c55e',
 };
-

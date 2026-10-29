@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { ElementType } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AppTopbar from '@/components/AppTopbar';
+import { SelectField, Tabs, TextField } from '@/components/ui';
 import {
   FlaskConical,
   Zap,
@@ -16,29 +19,60 @@ import {
   CheckCircle2,
   Send,
   Plus,
-  RotateCcw
+  RotateCcw,
+  Copy,
+  Check,
+  Pencil,
+  X,
 } from 'lucide-react';
 import type { MasterResumeData, GapAnalysis, OptimizedBullet } from '@/lib/types';
 import PDFDownloadButton from '@/components/PDFDownloadButton';
+import CoverLetterPDF from '@/components/CoverLetterPDF';
+import { pdf } from '@react-pdf/renderer';
+import { registerInterFont } from '@/lib/registerFonts';
+
+function cleanCoverLetter(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^###\s*$/gm, '')
+    .replace(/^#+\s+/gm, '')
+    .replace(/^\s*(#|\*\*)*\s*cover letter:?\s*(#|\*\*)*\s*\n+/i, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 function resumeToText(resume: MasterResumeData): string {
-  let text = `${resume.name}\n${resume.title}\n${resume.email} | ${resume.phone} | ${resume.location}\n\n`;
-  if (resume.summary) text += `SUMMARY\n${resume.summary}\n\n`;
+  let text = `${resume.name}\n${resume.title}\n`;
+  const contact: string[] = [];
+  if (resume.location) contact.push(resume.location);
+  if (resume.phone) contact.push(resume.phone);
+  if (resume.email) contact.push(resume.email);
+  if (contact.length) text += `${contact.join(' | ')}\n`;
+
+  const links: string[] = [];
+  if (resume.linkedin) links.push(`LinkedIn: ${resume.linkedin}`);
+  if (resume.twitter) links.push(`X: ${resume.twitter}`);
+  if (resume.website) links.push(`Website: ${resume.website}`);
+  if (links.length) text += `${links.join(' | ')}\n`;
+  text += '\n';
+
+  if (resume.summary) text += `PROFESSIONAL SUMMARY\n${resume.summary}\n\n`;
 
   if (resume.skillGroups && resume.skillGroups.length) {
     text += 'SKILLS\n';
     for (const group of resume.skillGroups) {
-      text += `● ${group.category}: ${group.skills.join(', ')}\n`;
+      text += `• ${group.category}: ${group.skills.join(', ')}\n`;
     }
     text += '\n';
-  } else if (resume.skills.length) {
+  } else if (resume.skills && resume.skills.length) {
     text += `SKILLS\n${resume.skills.join(', ')}\n\n`;
   }
-  if (resume.experience.length) {
-    text += 'EXPERIENCE\n';
+
+  if (resume.experience && resume.experience.length) {
+    text += 'PROFESSIONAL EXPERIENCE\n';
     for (const exp of resume.experience) {
-      text += `${exp.title} at ${exp.company} (${exp.startDate} - ${exp.endDate})\n`;
-      for (const b of exp.bullets) text += `• ${b}\n`;
+      text += `${exp.title}\n${exp.company} (${exp.startDate} - ${exp.endDate})\n`;
+      for (const b of exp.bullets) text += `• ${b.trim()}\n`;
       text += '\n';
     }
   }
@@ -46,14 +80,15 @@ function resumeToText(resume: MasterResumeData): string {
   if ((resume.projects ?? []).length > 0) {
     text += 'PROJECTS\n';
     for (const proj of resume.projects) {
-      text += `${proj.name}\n${proj.description}\n\n`;
+      text += `• ${proj.name}${proj.url ? ` (${proj.url})` : ''}: ${proj.description}\n`;
     }
+    text += '\n';
   }
 
-  if (resume.education.length) {
+  if (resume.education && resume.education.length) {
     text += 'EDUCATION\n';
     for (const edu of resume.education) {
-      text += `${edu.degree} in ${edu.field} - ${edu.school} (${edu.startDate} - ${edu.endDate})\n`;
+      text += `${edu.degree}${edu.field ? ` in ${edu.field}` : ''} - ${edu.school} (${edu.startDate ? `${edu.startDate} - ` : ''}${edu.endDate})\n`;
     }
     text += '\n';
   }
@@ -61,7 +96,7 @@ function resumeToText(resume: MasterResumeData): string {
   if ((resume.certifications ?? []).length > 0) {
     text += 'CERTIFICATIONS\n';
     for (const cert of resume.certifications) {
-      text += `● ${cert.name} - ${cert.issuer}\n`;
+      text += `• ${cert.name}${cert.issuer ? ` - ${cert.issuer}` : ''}${cert.date ? ` (${cert.date})` : ''}\n`;
     }
   }
 
@@ -90,6 +125,7 @@ export default function LabPage() {
   const [generationTimes, setGenerationTimes] = useState<Record<string, number>>({});
 
   const [activeTab, setActiveTab] = useState<'analysis' | 'optimize' | 'cover' | 'linkedin' | 'chat'>('analysis');
+  const [mobileSetupOpen, setMobileSetupOpen] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [generatingCover, setGeneratingCover] = useState(false);
@@ -139,6 +175,7 @@ export default function LabPage() {
   const handleRestore = (restore: boolean) => {
     if (restore && savedData) {
       if (savedData.applicationId) setApplicationId(savedData.applicationId);
+      if (savedData.selectedResume) setSelectedResume(savedData.selectedResume);
       if (savedData.applicationStatus) setApplicationStatus(savedData.applicationStatus);
       if (savedData.jobDescription) setJobDescription(savedData.jobDescription);
       if (savedData.company) setCompany(savedData.company);
@@ -171,6 +208,7 @@ export default function LabPage() {
       jobTitle,
       extraInfo,
       recruiterName,
+      selectedResume,
       analysis,
       optimizedBullets,
       optimizedSummary,
@@ -181,7 +219,7 @@ export default function LabPage() {
       generationTimes
     };
     localStorage.setItem('resume-buddy-lab-state', JSON.stringify(state));
-  }, [applicationId, applicationStatus, jobDescription, company, jobTitle, extraInfo, recruiterName, analysis, optimizedBullets, optimizedSummary, coverLetter, linkedinMessage, chatMessages, activeTab, generationTimes, isInitialized]);
+  }, [applicationId, applicationStatus, jobDescription, company, jobTitle, extraInfo, recruiterName, selectedResume, analysis, optimizedBullets, optimizedSummary, coverLetter, linkedinMessage, chatMessages, activeTab, generationTimes, isInitialized]);
 
   const notify = (title: string, body: string) => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -358,9 +396,17 @@ export default function LabPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           resume: resumeToText(selectedResume),
+          candidateName: selectedResume.name,
+          candidateEmail: selectedResume.email,
+          candidatePhone: selectedResume.phone,
+          candidateLocation: selectedResume.location,
+          candidateWebsite: selectedResume.website,
+          candidateLinkedin: selectedResume.linkedin,
+          candidateTitle: selectedResume.title,
+          recruiterName,
           jobDescription,
-          company: company || 'the company',
-          jobTitle: jobTitle || 'the position',
+          company: company || '',
+          jobTitle: jobTitle || '',
           action: 'cover-letter',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
@@ -388,12 +434,14 @@ export default function LabPage() {
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         fullLetter += chunk;
-        fullLetter = fullLetter.replace(/^\s*(#|\*\*)*\s*cover letter\s*(#|\*\*)*\s*\n+/i, '');
-        setCoverLetter(fullLetter);
+        const cleaned = cleanCoverLetter(fullLetter);
+        setCoverLetter(cleaned);
       }
+      const finalLetter = cleanCoverLetter(fullLetter);
+      setCoverLetter(finalLetter);
       setGenerationTimes(prev => ({ ...prev, coverLetter: (prev.coverLetter || 0) + (Date.now() - startTime) }));
 
-      notify('Cover Letter Ready!', 'Your tailored cover letter is complete.');
+      notify('Cover Letter Ready!', 'Your Harvard-standard cover letter is complete.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Cover letter generation failed');
     } finally {
@@ -543,7 +591,7 @@ export default function LabPage() {
           recruiterName,
           status: newStatus,
           atsScore: analysis?.score || 0,
-          optimizedResume: JSON.stringify(optimizedBullets),
+          optimizedResume: JSON.stringify({ version: 2, bullets: optimizedBullets, resume: selectedResume }),
           optimizedSummary: optimizedSummary || '',
           coverLetter: coverLetter || '',
           linkedinMessage: linkedinMessage || '',
@@ -573,6 +621,27 @@ export default function LabPage() {
     score >= 70 ? 'var(--accent-green)' : score >= 40 ? 'var(--accent-amber)' : 'var(--accent-red)';
 
   const isProcessing = analyzing || optimizing || generatingCover || generatingLinkedin || sendingChat;
+  const resumeOptions = resumes.length > 0
+    ? resumes.map((resume) => ({
+        value: resume.id || '',
+        label: resume.name || 'Untitled resume',
+        description: resume.title || 'Master resume',
+        group: 'Master resumes',
+        icon: <FileText size={14} />,
+      }))
+    : [{ value: '__no-resume__', label: 'No master resume available', description: 'Create a resume in Master Resume.', group: 'Master resumes', icon: <FileText size={14} /> }];
+  const modelOptions = availableModels.length > 0
+    ? availableModels.map((model) => ({ value: model.name, label: model.name, description: 'Available on this device', group: 'Installed models', icon: <Sparkles size={14} /> }))
+    : [{
+        value: fetchingModels ? '__loading-models__' : '__no-models__',
+        label: fetchingModels ? 'Checking available models' : 'No models installed',
+        description: fetchingModels ? 'Reading your local model list.' : 'Configure a model in Settings to continue.',
+        group: 'Model status',
+        icon: <Sparkles size={14} />,
+      }];
+  const selectedModel = availableModels.some((model) => model.name === (labModel || ollamaSettings.model))
+    ? (labModel || ollamaSettings.model)
+    : modelOptions[0]?.value || '';
 
   return (
     <div className="app-layout">
@@ -637,60 +706,79 @@ export default function LabPage() {
         </div>
       )}
       <Sidebar />
-      <main className="main-content" style={{ padding: '32px 40px' }}>
-        <div className="dashboard-grid" style={{ gridTemplateColumns: '400px 1fr', height: 'calc(100vh - 100px)' }}>
-          {/* Left Column: Control Panel */}
-          <div className="control-panel">
-            <div className="page-header" style={{ marginBottom: 8, paddingLeft: 8 }}>
-              <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <FlaskConical size={24} color="var(--accent-primary)" /> AI Lab
-              </h1>
-              <p className="page-subtitle">Configure your optimization workstation</p>
+      <AppTopbar />
+      <main className={`main-content lab-main-content ${mobileSetupOpen ? '' : 'mobile-setup-collapsed'}`}>
+        <div className="page-header lab-page-header">
+          <div>
+            <h1 className="page-title lab-page-title">
+              <FlaskConical size={20} aria-hidden="true" /> The Lab
+            </h1>
+            <p className="page-subtitle">Tailor your materials to the role.</p>
+          </div>
+          <div className="lab-header-actions">
+            <span className="lab-header-actions-label">GENERATE MATERIALS</span>
+            <div className="lab-action-grid" aria-label="Application generation actions">
+              <button className="btn lab-action-button lab-action-analyze" onClick={handleAnalyze} disabled={isProcessing}>
+                <span className="lab-action-icon">{analyzing ? <div className="spinner" /> : <Zap size={18} />}</span>
+                <span className="lab-action-copy"><strong>{analyzing ? 'Analyzing…' : 'Analyze gap'}</strong><small>Check role alignment</small></span>
+              </button>
+              <button className="btn lab-action-button lab-action-optimize" onClick={handleOptimize} disabled={isProcessing}>
+                <span className="lab-action-icon">{optimizing ? <div className="spinner" /> : <Sparkles size={18} />}</span>
+                <span className="lab-action-copy"><strong>{optimizing ? 'Optimizing…' : 'Optimize resume'}</strong><small>Tailor to this role</small></span>
+              </button>
+              <button className="btn lab-action-button lab-action-secondary" onClick={handleCoverLetter} disabled={isProcessing}>
+                <span className="lab-action-icon"><FileText size={18} /></span>
+                <span className="lab-action-copy"><strong>Cover letter</strong><small>Draft a tailored letter</small></span>
+              </button>
+              <button className="btn lab-action-button lab-action-secondary" onClick={handleLinkedinMessage} disabled={isProcessing}>
+                <span className="lab-action-icon"><Send size={18} /></span>
+                <span className="lab-action-copy"><strong>Outreach message</strong><small>Start a conversation</small></span>
+              </button>
             </div>
+            <button type="button" className="lab-mobile-setup-toggle" aria-expanded={mobileSetupOpen} aria-controls="lab-setup-controls" onClick={() => setMobileSetupOpen((open) => !open)}>
+              {mobileSetupOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              {mobileSetupOpen ? 'Hide position setup' : 'Show position setup'}
+            </button>
+          </div>
+        </div>
 
+        <div className="lab-workstation">
+          {/* Left Column: Control Panel */}
+          <div id="lab-setup-controls" className={`control-panel ${mobileSetupOpen ? '' : 'mobile-setup-collapsed'}`}>
             {/* Context Card */}
-            <div className="workspace-card" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="workspace-card lab-card">
               <div>
-                <label className="premium-label">
+                <label className="premium-label lab-section-label">
                   <Zap size={14} /> AI Intelligence & Target
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <select
-                      className="form-select"
-                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}
-                      value={selectedResume?.id || ''}
-                      onChange={(e) => {
-                        const r = resumes.find((r) => r.id === e.target.value);
-                        if (r) setSelectedResume(r);
-                      }}
-                    >
-                      {resumes.map((r) => (
-                        <option key={r.id} value={r.id}>{r.name} — {r.title}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="lab-field-stack">
+                  <SelectField
+                    label="Master resume"
+                    options={resumeOptions}
+                    value={selectedResume?.id || (resumes.length === 0 ? '__no-resume__' : '')}
+                    placeholder="Choose a master resume"
+                    disabled={resumes.length === 0}
+                    onChange={(id) => {
+                      const resume = resumes.find((item) => item.id === id);
+                      if (resume) setSelectedResume(resume);
+                    }}
+                    name="lab-master-resume"
+                  />
 
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <select
-                      className="form-select"
-                      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}
-                      value={labModel || ollamaSettings.model}
-                      onChange={(e) => setLabModel(e.target.value)}
-                    >
-                      {availableModels.length > 0 ? (
-                        availableModels.map(m => (
-                          <option key={m.name} value={m.name}>{m.name}</option>
-                        ))
-                      ) : fetchingModels ? (
-                        <option value="">Fetching models...</option>
-                      ) : (
-                        <option value="">No models installed</option>
-                      )}
-                    </select>
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Default: {ollamaSettings.model}</span>
-                      <a href="/settings" style={{ fontSize: 10, color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>Configure Model</a>
+                  <div className="lab-model-select-wrap">
+                    <SelectField
+                      label="AI model"
+                      options={modelOptions}
+                      value={selectedModel}
+                      placeholder="Choose a model"
+                      disabled={availableModels.length === 0}
+                      onChange={setLabModel}
+                      leadingIcon={<Sparkles size={14} />}
+                      name="lab-ai-model"
+                    />
+                    <div className="lab-model-meta">
+                      <span>Default: {ollamaSettings.model}</span>
+                      <a href="/settings">Configure model</a>
                     </div>
                   </div>
                 </div>
@@ -698,65 +786,35 @@ export default function LabPage() {
             </div>
 
             {/* Job Details Card */}
-            <div className="workspace-card" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div className="workspace-card lab-card">
               <div>
-                <label className="premium-label">
+                <label className="premium-label lab-section-label">
                   <FileText size={14} /> Position Details
                 </label>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div className="premium-input-group">
-                      <input 
-                        className="premium-textarea" 
-                        style={{ height: 44, padding: '10px 16px' }} 
-                        placeholder="Company Name" 
-                        value={company} 
-                        onChange={(e) => setCompany(e.target.value)} 
-                      />
-                    </div>
-                    <div className="premium-input-group">
-                      <input 
-                        className="premium-textarea" 
-                        style={{ height: 44, padding: '10px 16px' }} 
-                        placeholder="Job Title" 
-                        value={jobTitle} 
-                        onChange={(e) => setJobTitle(e.target.value)} 
-                      />
-                    </div>
+                <div className="lab-field-stack">
+                  <div className="lab-field-grid">
+                    <TextField label="Company" placeholder="Company name" value={company} onChange={(e) => setCompany(e.target.value)} name="lab-company" />
+                    <TextField label="Role title" placeholder="e.g. Product Designer" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} name="lab-job-title" />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div className="premium-input-group">
-                      <input 
-                        className="premium-textarea" 
-                        style={{ height: 44, padding: '10px 16px' }} 
-                        placeholder="Recruiter (Optional)" 
-                        value={recruiterName} 
-                        onChange={(e) => setRecruiterName(e.target.value)} 
-                      />
-                    </div>
-                    <div className="premium-input-group">
-                      <input 
-                        className="premium-textarea" 
-                        style={{ height: 44, padding: '10px 16px' }} 
-                        placeholder="Extra Context (Values, etc)" 
-                        value={extraInfo} 
-                        onChange={(e) => setExtraInfo(e.target.value)} 
-                      />
-                    </div>
+                  <div className="lab-field-grid">
+                    <TextField label="Recruiter (optional)" placeholder="Recruiter name" value={recruiterName} onChange={(e) => setRecruiterName(e.target.value)} name="lab-recruiter" />
+                    <TextField label="Extra context" placeholder="Values, priorities, or notes" value={extraInfo} onChange={(e) => setExtraInfo(e.target.value)} name="lab-extra-context" />
                   </div>
 
-                  <div className="premium-input-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="premium-input-group lab-description-group">
+                    <label className="lab-description-label" htmlFor="lab-job-description">Job description</label>
                     <textarea
-                      className="premium-textarea"
-                      style={{ minHeight: 280 }}
+                      id="lab-job-description"
+                      className="premium-textarea lab-job-description"
                       placeholder="Paste the position requirements and responsibilities here..."
                       value={jobDescription}
+                      aria-label="Job description"
                       onChange={(e) => setJobDescription(e.target.value)}
                     />
-                    <div style={{ padding: '4px 16px 12px', display: 'flex', justifyContent: 'flex-end' }}>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+                    <div className="lab-character-count">
+                      <span>
                         {jobDescription.length.toLocaleString()} characters
                       </span>
                     </div>
@@ -764,21 +822,6 @@ export default function LabPage() {
                 </div>
               </div>
 
-              {/* Actions Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <button className="btn btn-primary" onClick={handleAnalyze} disabled={isProcessing} style={{ padding: '12px 0', borderRadius: 'var(--radius-lg)', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}>
-                  {analyzing ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Zap size={15} />} Analyze Gap
-                </button>
-                <button className="btn btn-green" onClick={handleOptimize} disabled={isProcessing} style={{ padding: '12px 0', borderRadius: 'var(--radius-lg)', boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)' }}>
-                  {optimizing ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Sparkles size={15} />} Optimize
-                </button>
-                <button className="btn btn-ghost" onClick={handleCoverLetter} disabled={isProcessing} style={{ padding: '12px 0', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-lg)' }}>
-                  <FileText size={15} /> Cover Letter
-                </button>
-                <button className="btn btn-ghost" onClick={handleLinkedinMessage} disabled={isProcessing} style={{ padding: '12px 0', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-lg)' }}>
-                  <Send size={15} /> Outreach Msg
-                </button>
-              </div>
             </div>
 
             {/* Status Footer */}
@@ -799,41 +842,51 @@ export default function LabPage() {
           </div>
 
           {/* Right Column: Display Panel */}
-          <div className="display-panel">
-            <div className="display-panel-header">
-              <div className="tabs" style={{ borderBottom: 'none', marginBottom: 0 }}>
-                <button className={`tab ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => setActiveTab('analysis')}>Gap Analysis</button>
-                <button className={`tab ${activeTab === 'optimize' ? 'active' : ''}`} onClick={() => setActiveTab('optimize')}>Tailored Resume</button>
-                <button className={`tab ${activeTab === 'cover' ? 'active' : ''}`} onClick={() => setActiveTab('cover')}>Cover Letter</button>
-                <button className={`tab ${activeTab === 'linkedin' ? 'active' : ''}`} onClick={() => setActiveTab('linkedin')}>Outreach</button>
-                <button className={`tab ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>AI Q&A</button>
-              </div>
+          <div className="display-panel lab-results-panel">
+            <div className="display-panel-header lab-results-header">
+              <Tabs
+                items={[
+                  { id: 'analysis', label: 'Gap Analysis' },
+                  { id: 'optimize', label: 'Tailored Resume' },
+                  { id: 'cover', label: 'Cover Letter' },
+                  { id: 'linkedin', label: 'Outreach' },
+                  { id: 'chat', label: 'AI Q&A' },
+                ]}
+                value={activeTab}
+                onChange={(tab) => setActiveTab(tab as typeof activeTab)}
+                label="Generated results"
+                idPrefix="lab-results"
+                className="lab-results-tabs"
+              />
 
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div className="lab-results-actions">
                 {Object.keys(generationTimes).length > 0 && (
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div className="spinner" style={{ width: 8, height: 8, animationDuration: '3s' }} /> Total AI Time: <strong style={{color: 'var(--text-primary)'}}>{(Object.values(generationTimes).reduce((a, b) => a + b, 0) / 1000).toFixed(1)}s</strong>
+                  <div className="lab-ai-time">
+                    Total AI time <strong>{(Object.values(generationTimes).reduce((a, b) => a + b, 0) / 1000).toFixed(1)}s</strong>
                   </div>
                 )}
                 {(analysis || optimizedBullets.length > 0 || coverLetter) && applicationStatus !== 'applied' && (
-                  <>
+                  <div className="lab-commit-actions">
                     <button className="btn btn-ghost btn-sm" onClick={() => handleSaveApplication('saved')} disabled={saving}>
                       <Save size={14} /> {saving && applicationStatus === 'saved' ? '...' : 'Save Draft'}
                     </button>
                     <button className="btn btn-primary btn-sm" onClick={() => handleSaveApplication('applied')} disabled={saving}>
                       <CheckCircle2 size={14} /> Finish
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="display-panel-body" style={{ background: activeTab === 'optimize' || activeTab === 'cover' ? 'var(--bg-primary)' : 'transparent' }}>
+            <div className="display-panel-body" id={`panel-lab-results-${activeTab}`} role="tabpanel" aria-labelledby={`tab-lab-results-${activeTab}`} style={{ background: activeTab === 'optimize' || activeTab === 'cover' ? 'var(--bg-primary)' : 'transparent' }}>
               {activeTab === 'analysis' && <AnalysisView analysis={analysis} loading={analyzing} scoreColor={scoreColor} />}
               {activeTab === 'optimize' && (
                 <OptimizeView
                   bullets={optimizedBullets}
+                  onUpdateBullets={setOptimizedBullets}
                   summary={optimizedSummary}
+                  onUpdateSummary={setOptimizedSummary}
+                  onUpdateResume={setSelectedResume}
                   loading={optimizing}
                   resume={selectedResume}
                 />
@@ -841,6 +894,7 @@ export default function LabPage() {
               {activeTab === 'cover' && (
                 <CoverLetterView
                   letter={coverLetter}
+                  onUpdateLetter={setCoverLetter}
                   loading={generatingCover}
                   onRegenerate={handleCoverLetter}
                 />
@@ -865,15 +919,7 @@ export default function LabPage() {
           </div>
         </div>
         {error && (
-          <div style={{
-            position: 'fixed', bottom: 32, right: 32, zIndex: 100,
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 16px',
-            background: 'rgba(239,68,68,0.9)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(239,68,68,0.3)',
-            borderRadius: 'var(--radius-md)', color: 'white', fontSize: 14,
-            boxShadow: 'var(--shadow-lg)'
-          }}>
+          <div className="lab-error-toast" role="alert">
             <AlertCircle size={16} /> {error}
           </div>
         )}
@@ -965,63 +1011,528 @@ function AnalysisView({ analysis, loading, scoreColor }: { analysis: GapAnalysis
   );
 }
 
-function OptimizeView({ bullets, summary, loading, resume }: { bullets: OptimizedBullet[]; summary?: string; loading: boolean; resume?: MasterResumeData | null }) {
-  if (loading) return <div className="loading-overlay" style={{ height: '100%' }}><div className="spinner" /><span>Optimizing resume content...</span></div>;
-  if (bullets.length === 0 && !summary) return <div className="empty-state" style={{ height: '100%' }}><div className="empty-state-icon"><Sparkles size={28} /></div><p className="empty-state-title">No optimization data</p><p className="empty-state-text">Click &quot;Optimize&quot; to generate tailored content.</p></div>;
+function normalizeForMatching(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[“”"']/g, '')
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchOptimizedBullet(bullet: string, optimizedList: OptimizedBullet[]): { text: string; isOptimized: boolean; relevance?: string; item?: OptimizedBullet } {
+  if (!optimizedList || optimizedList.length === 0) return { text: bullet.trim(), isOptimized: false };
+  const trimmed = bullet.trim();
+
+  // 1. Direct trimmed match
+  const direct = optimizedList.find(ob => ob.original.trim() === trimmed);
+  if (direct) return { text: direct.optimized.trim(), isOptimized: true, relevance: direct.relevance, item: direct };
+
+  // 2. Full normalized match
+  const norm = normalizeForMatching(bullet);
+  if (!norm) return { text: trimmed, isOptimized: false };
+
+  const fullNorm = optimizedList.find(ob => normalizeForMatching(ob.original) === norm);
+  if (fullNorm) return { text: fullNorm.optimized.trim(), isOptimized: true, relevance: fullNorm.relevance, item: fullNorm };
+
+  // 3. Prefix/substring match
+  const prefix = norm.slice(0, 35);
+  if (prefix.length >= 18) {
+    const partial = optimizedList.find(ob => {
+      const obNorm = normalizeForMatching(ob.original);
+      return obNorm.includes(prefix) || norm.includes(obNorm.slice(0, 35));
+    });
+    if (partial) return { text: partial.optimized.trim(), isOptimized: true, relevance: partial.relevance, item: partial };
+  }
+
+  return { text: trimmed, isOptimized: false };
+}
+
+function BulletDot({ color = '#000000', size = 4.5, top = 6.5 }: { color?: string; size?: number; top?: number }) {
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        width: `${size}px`,
+        height: `${size}px`,
+        minWidth: `${size}px`,
+        minHeight: `${size}px`,
+        borderRadius: '50%',
+        backgroundColor: color,
+        marginTop: `${top}px`,
+        marginRight: '9px',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function cloneResume(resume: MasterResumeData): MasterResumeData {
+  return {
+    ...resume,
+    skills: [...(resume.skills || [])],
+    skillGroups: (resume.skillGroups || []).map((group) => ({ ...group, skills: [...group.skills] })),
+    experience: (resume.experience || []).map((item) => ({ ...item, bullets: [...item.bullets] })),
+    projects: (resume.projects || []).map((item) => ({ ...item })),
+    education: (resume.education || []).map((item) => ({ ...item })),
+    certifications: (resume.certifications || []).map((item) => ({ ...item })),
+  };
+}
+
+function EditableText({ editing, value, onCommit, as = 'span', className = '' }: { editing: boolean; value?: string | null; onCommit: (value: string) => void; as?: ElementType; className?: string }) {
+  const Tag = as;
+  return <Tag
+    className={`resume-editable-text ${className}`.trim()}
+    contentEditable={editing}
+    suppressContentEditableWarning
+    role={editing ? 'textbox' : undefined}
+    aria-multiline={editing ? true : undefined}
+    data-placeholder={editing && !value ? 'Type here' : undefined}
+    onBlur={editing ? (event: React.FocusEvent<HTMLElement>) => onCommit(event.currentTarget.innerText.replace(/\u00a0/g, ' ')) : undefined}
+  >{value || ''}</Tag>;
+}
+
+function OptimizeView({ bullets, onUpdateBullets, summary, onUpdateSummary, onUpdateResume, loading, resume }: { bullets: OptimizedBullet[]; onUpdateBullets: (value: OptimizedBullet[]) => void; summary?: string; onUpdateSummary?: (val: string) => void; onUpdateResume: (value: MasterResumeData) => void; loading: boolean; resume?: MasterResumeData | null }) {
+  const [viewMode, setViewMode] = useState<'preview' | 'diff'>('preview');
+  const [isEditingOutput, setIsEditingOutput] = useState(false);
+  const [editSummaryText, setEditSummaryText] = useState(summary || '');
+  const [editBullets, setEditBullets] = useState<OptimizedBullet[]>(bullets);
+  const [editResume, setEditResume] = useState<MasterResumeData | null>(resume || null);
+
+  useEffect(() => {
+    setEditSummaryText(summary || '');
+    setEditBullets(bullets);
+    setEditResume(resume ? cloneResume(resume) : null);
+  }, [summary, bullets, resume]);
+
+  if (loading) return <div className="loading-overlay" style={{ height: '100%' }}><div className="spinner" /><span>Optimizing resume content for ATS...</span></div>;
+  if (bullets.length === 0 && !summary) return <div className="empty-state" style={{ height: '100%' }}><div className="empty-state-icon"><Sparkles size={28} /></div><p className="empty-state-title">No optimization data</p><p className="empty-state-text">Click &quot;Optimize&quot; to generate ATS-tailored resume content.</p></div>;
+
+  if (!resume) return <div className="empty-state"><p>Please select a Master Resume to preview.</p></div>;
+
+  const displaySummary = (isEditingOutput ? editSummaryText : summary || resume.summary || '').trim();
+  const beginEditing = () => {
+    setEditSummaryText(summary || resume.summary || '');
+    setEditBullets(bullets.map((item) => ({ ...item })));
+    setEditResume(cloneResume(resume));
+    setIsEditingOutput(true);
+  };
+  const saveEdits = () => {
+    onUpdateSummary?.(editSummaryText);
+    onUpdateBullets(editBullets);
+    if (editResume) onUpdateResume(editResume);
+    setIsEditingOutput(false);
+  };
+  const updateBullet = (index: number, value: string) => {
+    setEditBullets((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, optimized: value } : item));
+  };
+  const outputResume = isEditingOutput && editResume ? editResume : resume;
+  const updateResumeField = <K extends keyof MasterResumeData>(field: K, value: MasterResumeData[K]) => {
+    setEditResume((current) => current ? { ...current, [field]: value } : current);
+  };
+  const updateExperienceField = (index: number, field: string, value: string) => setEditResume((current) => current ? ({ ...current, experience: current.experience.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item) }) : current);
+  const updateExperienceBullet = (experienceIndex: number, bulletIndex: number, value: string) => setEditResume((current) => current ? ({ ...current, experience: current.experience.map((item, itemIndex) => itemIndex === experienceIndex ? { ...item, bullets: item.bullets.map((bullet, index) => index === bulletIndex ? value : bullet) } : item) }) : current);
+  const updateEducationField = (index: number, field: string, value: string) => setEditResume((current) => current ? ({ ...current, education: current.education.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item) }) : current);
+  const updateProjectField = (index: number, field: string, value: string) => setEditResume((current) => current ? ({ ...current, projects: current.projects.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item) }) : current);
+  const updateCertificationField = (index: number, field: string, value: string) => setEditResume((current) => current ? ({ ...current, certifications: current.certifications.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item) }) : current);
+
+  // Format link helper
+  const formatUrl = (url: string) => {
+    if (!url) return '';
+    return url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+  };
+
+  const getLinkLabel = (url: string, defaultLabel: string) => {
+    if (!url) return defaultLabel.toUpperCase();
+    const clean = url.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+    if (clean.includes('linkedin.com')) return 'LINKEDIN';
+    if (clean.includes('twitter.com') || clean.includes('x.com')) return 'X';
+    if (clean.includes('github.com')) return 'GITHUB';
+    return defaultLabel.toUpperCase();
+  };
+
+  // Build contact items array
+  const contactParts: { text: string; field: 'location' | 'phone' | 'email'; isEmail?: boolean }[] = [];
+  if (outputResume.location || isEditingOutput) contactParts.push({ text: outputResume.location, field: 'location' });
+  if (outputResume.phone || isEditingOutput) contactParts.push({ text: outputResume.phone, field: 'phone' });
+  if (outputResume.email || isEditingOutput) contactParts.push({ text: outputResume.email, field: 'email', isEmail: true });
+
+  // Build link items array
+  const linkParts: { url: string; label: string; field: 'linkedin' | 'twitter' | 'website' }[] = [];
+  if (outputResume.linkedin || isEditingOutput) linkParts.push({ url: outputResume.linkedin, label: getLinkLabel(outputResume.linkedin, 'LinkedIn'), field: 'linkedin' });
+  if (outputResume.twitter || isEditingOutput) linkParts.push({ url: outputResume.twitter, label: getLinkLabel(outputResume.twitter, 'X'), field: 'twitter' });
+  if (outputResume.website || isEditingOutput) linkParts.push({ url: outputResume.website, label: getLinkLabel(outputResume.website, 'Portfolio Website'), field: 'website' });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {resume && (
-        <div className="paper-actions">
-          <PDFDownloadButton
-            resume={resume}
-            optimizedBullets={bullets}
-            optimizedSummary={summary || ''}
-          />
+      {/* Top Action & View Switcher Bar */}
+      <div className="resume-preview-toolbar">
+        <div className="resume-preview-context">
+          <span className="resume-preview-kicker">DOCUMENT PREVIEW</span>
+          <strong>Tailored resume</strong>
         </div>
-      )}
 
-      <div className="document-paper">
-        {summary && (
-          <div style={{ marginBottom: 32 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: 4, marginBottom: 12 }}>PROFESSIONAL SUMMARY</h3>
-            <p style={{ fontSize: 14, lineHeight: 1.5, textAlign: 'justify' }}>{summary}</p>
-          </div>
-        )}
+        <div className="resume-view-switcher" aria-label="Resume view">
+          <button
+            type="button"
+            className={`resume-view-button ${viewMode === 'preview' ? 'active' : ''}`}
+            aria-pressed={viewMode === 'preview'}
+            onClick={() => setViewMode('preview')}
+          >
+            <FileText size={15} /> Full Resume Document
+          </button>
+          <button
+            type="button"
+            className={`resume-view-button ${viewMode === 'diff' ? 'active' : ''}`}
+            aria-pressed={viewMode === 'diff'}
+            onClick={() => setViewMode('diff')}
+          >
+            <Sparkles size={15} /> Optimization Diff <span className="resume-diff-count">{bullets.length}</span>
+          </button>
+        </div>
 
-        <h3 style={{ fontSize: 16, fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: 4, marginBottom: 12 }}>EXPERIENCE OPTIMIZATIONS</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {bullets.map((b, i) => (
-            <div key={i} style={{ fontSize: 14, lineHeight: 1.5 }}>
-              <div style={{ color: '#666', fontSize: 11, fontStyle: 'italic', marginBottom: 2 }}>{b.original}</div>
-              <div style={{ fontWeight: 500 }}>• {b.optimized}</div>
-            </div>
-          ))}
+        <div className="resume-preview-actions">
+          <span className="resume-ats-status">
+            <span className="status-dot connected" /> ATS aligned
+          </span>
+          {isEditingOutput ? <>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsEditingOutput(false)}><X size={14} /> Cancel</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={saveEdits}><Check size={14} /> Save edits</button>
+          </> : <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={beginEditing}><Pencil size={14} /> Edit output</button>
+            <PDFDownloadButton resume={resume} optimizedBullets={bullets} optimizedSummary={summary || ''} />
+          </>}
         </div>
       </div>
+
+      {viewMode === 'diff' ? (
+        /* Diff Breakdown View */
+        <div className="document-paper resume-diff-paper" style={{ fontFamily: 'inherit', color: 'inherit', background: 'var(--bg-secondary)', border: '1px solid var(--border-secondary)' }}>
+          {(isEditingOutput ? editSummaryText : summary) && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--border-primary)', paddingBottom: 6 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', color: 'var(--accent-primary)', margin: 0 }}>
+                  Tailored Professional Summary
+                </h3>
+                <span className="badge badge-success" style={{ fontSize: 10 }}>ATS Optimized</span>
+              </div>
+              {isEditingOutput ? <EditableText editing value={editSummaryText} onCommit={setEditSummaryText} as="div" className="resume-editable-text-block" /> :
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-primary)', background: 'var(--bg-card)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>{summary}</p>}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-primary)', paddingBottom: 6 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', color: 'var(--accent-green)', margin: 0 }}>
+              Tailored Experience Bullets ({bullets.length})
+            </h3>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Google XYZ & STAR Impact Format</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {(isEditingOutput ? editBullets : bullets).map((b, i) => (
+              <div key={i} style={{ padding: 16, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8, fontStyle: 'italic', textDecoration: 'line-through', opacity: 0.7 }}>
+                  {b.original}
+                </div>
+                {isEditingOutput ? <EditableText editing value={b.optimized} onCommit={(value) => updateBullet(i, value)} as="div" className="resume-editable-text-block" /> :
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start' }}><BulletDot color="var(--accent-green)" size={4.5} top={6.5} /><span>{b.optimized}</span></div>}
+                <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                  <span className={`badge ${b.relevance === 'high' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 10 }}>
+                    {b.relevance ? `${b.relevance.toUpperCase()} ATS RELEVANCE` : 'ATS OPTIMIZED'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* Full Resume Document View (Exact match to sample PDF) */
+        <div className="document-paper resume-preview-paper">
+          {/* Header */}
+          <div style={{ marginBottom: 16 }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#000000', margin: '0 0 4px 0', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+              <EditableText editing={isEditingOutput} value={outputResume.name} onCommit={(value) => updateResumeField('name', value)} as="span" />
+            </h1>
+            {(outputResume.title || isEditingOutput) && (
+              <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#111111', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 8 }}>
+                <EditableText editing={isEditingOutput} value={outputResume.title} onCommit={(value) => updateResumeField('title', value)} />
+              </div>
+            )}
+
+            {/* Contact Row 1 */}
+            {contactParts.length > 0 && (
+              <div style={{ fontSize: '12.5px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+                {contactParts.map((item, idx) => (
+                  <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {idx > 0 && <span style={{ fontWeight: 800, margin: '0 6px', color: '#000000' }}>|</span>}
+                    {isEditingOutput ? <EditableText editing value={item.text} onCommit={(value) => updateResumeField(item.field, value)} /> : item.isEmail ? (
+                      <a href={`mailto:${item.text}`} style={{ color: '#0056B3', textDecoration: 'underline', fontWeight: 700 }}>
+                        {item.text}
+                      </a>
+                    ) : (
+                      <strong style={{ color: '#000000' }}>{item.text}</strong>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Links Row 2 */}
+            {linkParts.length > 0 && (
+              <div style={{ fontSize: '12.5px', display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+                {linkParts.map((item, idx) => (
+                  <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {idx > 0 && <span style={{ fontWeight: 800, margin: '0 6px', color: '#000000' }}>|</span>}
+                    {isEditingOutput ? <EditableText editing value={item.url} onCommit={(value) => updateResumeField(item.field, value)} /> : <a href={formatUrl(item.url)} target="_blank" rel="noopener noreferrer" style={{ color: '#0056B3', textDecoration: 'underline' }}>{item.label}</a>}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Professional Summary */}
+          {(displaySummary || isEditingOutput) && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000' }}>
+                  Professional Summary
+                </div>
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 8 }} />
+              {isEditingOutput ? <EditableText editing value={editSummaryText} onCommit={setEditSummaryText} as="div" className="resume-editable-block" /> : (
+                <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.45, color: '#111111', textAlign: 'left' }}>
+                  {displaySummary}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Skills */}
+          {((outputResume.skillGroups ?? []).length > 0 || (outputResume.skills ?? []).length > 0 || isEditingOutput) && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000', marginBottom: 3 }}>
+                Skills
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 8 }} />
+              {(outputResume.skillGroups ?? []).length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {(outputResume.skillGroups ?? []).map((group, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', paddingLeft: 6, fontSize: '12.5px', lineHeight: 1.4 }}>
+                      <BulletDot size={4.5} top={6.5} />
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ color: '#000000' }}><EditableText editing={isEditingOutput} value={group.category} onCommit={(value) => setEditResume((current) => current ? ({ ...current, skillGroups: current.skillGroups.map((item, itemIndex) => itemIndex === i ? { ...item, category: value } : item) }) : current)} />:</strong>{' '}
+                        <span style={{ color: '#111111' }}><EditableText editing={isEditingOutput} value={group.skills.join(', ')} onCommit={(value) => setEditResume((current) => current ? ({ ...current, skillGroups: current.skillGroups.map((item, itemIndex) => itemIndex === i ? { ...item, skills: value.split(',').map((skill) => skill.trim()).filter(Boolean) } : item) }) : current)} /></span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'flex-start', paddingLeft: 6, fontSize: '12.5px', lineHeight: 1.4 }}>
+                  <BulletDot size={4.5} top={6.5} />
+                  <span style={{ flex: 1 }}><EditableText editing={isEditingOutput} value={(outputResume.skills ?? []).join(', ')} onCommit={(value) => updateResumeField('skills', value.split(',').map((skill) => skill.trim()).filter(Boolean))} /></span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Professional Experience */}
+          {(outputResume.experience ?? []).length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000', marginBottom: 3 }}>
+                Professional Experience
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 10 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {outputResume.experience.map((exp, i) => (
+                  <div key={i}>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#000000', marginBottom: 2 }}>
+                      <EditableText editing={isEditingOutput} value={exp.title} onCommit={(value) => updateExperienceField(i, 'title', value)} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12.5px', marginBottom: 6 }}>
+                      <span style={{ fontStyle: 'italic', color: '#333333' }}>
+                        <EditableText editing={isEditingOutput} value={exp.company} onCommit={(value) => updateExperienceField(i, 'company', value)} />{(exp.location || isEditingOutput) && <> - <EditableText editing={isEditingOutput} value={exp.location} onCommit={(value) => updateExperienceField(i, 'location', value)} /></>}
+                      </span>
+                      <strong style={{ color: '#000000' }}>
+                        <EditableText editing={isEditingOutput} value={exp.startDate} onCommit={(value) => updateExperienceField(i, 'startDate', value)} />{(exp.endDate || isEditingOutput) && <> – <EditableText editing={isEditingOutput} value={exp.endDate} onCommit={(value) => updateExperienceField(i, 'endDate', value)} /></>}
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {(exp.bullets || []).map((bullet, j) => {
+                        const matched = matchOptimizedBullet(bullet, isEditingOutput ? editBullets : bullets);
+                        const matchedIndex = matched.item ? (isEditingOutput ? editBullets : bullets).findIndex((item) => item.original === matched.item?.original) : -1;
+                        return (
+                          <div key={j} style={{ display: 'flex', alignItems: 'flex-start', paddingLeft: 6, fontSize: '12.5px', lineHeight: 1.45, color: '#111111' }}>
+                            <BulletDot size={4.5} top={7} />
+                            {isEditingOutput && matchedIndex >= 0 ? <EditableText editing value={editBullets[matchedIndex].optimized} onCommit={(value) => updateBullet(matchedIndex, value)} as="div" className="resume-editable-text-block" /> : isEditingOutput ? <EditableText editing value={matched.text} onCommit={(value) => updateExperienceBullet(i, j, value)} as="div" className="resume-editable-text-block" /> :
+                              <span style={{ flex: 1, ...(matched.isOptimized ? { background: 'rgba(34, 197, 94, 0.08)', borderRadius: 2, padding: '1px 3px' } : {}) }}>{matched.text}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {(outputResume.projects ?? []).length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000', marginBottom: 3 }}>
+                Projects
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 8 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {(outputResume.projects ?? []).map((proj, i) => {
+                  const cleanUrl = proj.url ? proj.url.replace(/^https?:\/\//, '').replace(/\/$/, '') : '';
+                  const nameHasUrl = cleanUrl && proj.name.toLowerCase().includes(cleanUrl.toLowerCase());
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', paddingLeft: 6, fontSize: '12.5px', lineHeight: 1.45 }}>
+                      <BulletDot size={4.5} top={7} />
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ color: '#000000' }}><EditableText editing={isEditingOutput} value={proj.name} onCommit={(value) => updateProjectField(i, 'name', value)} /></strong>
+                        {(proj.url || isEditingOutput) && (isEditingOutput || !nameHasUrl) && (
+                          <span>{' '}({isEditingOutput ? <EditableText editing value={proj.url} onCommit={(value) => updateProjectField(i, 'url', value)} /> : <a href={formatUrl(proj.url || '')} target="_blank" rel="noopener noreferrer" style={{ color: '#0056B3', textDecoration: 'underline' }}>{cleanUrl}</a>})</span>
+                        )}
+                        <span style={{ color: '#111111' }}>: <EditableText editing={isEditingOutput} value={proj.description} onCommit={(value) => updateProjectField(i, 'description', value)} /></span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {(outputResume.education ?? []).length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000', marginBottom: 3 }}>
+                Education
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 8 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {outputResume.education.map((edu, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '13.5px', marginBottom: 2 }}>
+                      <strong style={{ color: '#000000' }}><EditableText editing={isEditingOutput} value={edu.degree} onCommit={(value) => updateEducationField(i, 'degree', value)} />{(edu.field || isEditingOutput) && <> in <EditableText editing={isEditingOutput} value={edu.field} onCommit={(value) => updateEducationField(i, 'field', value)} /></>}</strong>
+                      <strong style={{ color: '#000000', fontSize: '12.5px' }}>
+                        <EditableText editing={isEditingOutput} value={`${edu.startDate || ''}${edu.startDate && edu.endDate ? ' – ' : ''}${edu.endDate || ''}`} onCommit={(value) => { const [startDate = '', endDate = ''] = value.split(/\s+[–-]\s+/, 2); updateEducationField(i, 'startDate', startDate); updateEducationField(i, 'endDate', endDate); }} />
+                      </strong>
+                    </div>
+                    <div style={{ fontStyle: 'italic', color: '#333333', fontSize: '12.5px' }}>
+                      <EditableText editing={isEditingOutput} value={edu.school} onCommit={(value) => updateEducationField(i, 'school', value)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {(outputResume.certifications ?? []).length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#000000', marginBottom: 3 }}>
+                Certifications
+              </div>
+              <div style={{ borderBottom: '2px solid #000000', marginBottom: 8 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {(outputResume.certifications ?? []).map((cert, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', paddingLeft: 6, fontSize: '12.5px', lineHeight: 1.4 }}>
+                    <BulletDot size={4.5} top={6.5} />
+                    <span style={{ flex: 1, color: '#111111' }}>
+                      <EditableText editing={isEditingOutput} value={cert.name} onCommit={(value) => updateCertificationField(i, 'name', value)} />{(cert.issuer || isEditingOutput) && <> - <EditableText editing={isEditingOutput} value={cert.issuer} onCommit={(value) => updateCertificationField(i, 'issuer', value)} /></>}{(cert.date || isEditingOutput) && <> (<EditableText editing={isEditingOutput} value={cert.date} onCommit={(value) => updateCertificationField(i, 'date', value)} />)</>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function CoverLetterView({ letter, loading, onRegenerate }: { letter: string; loading: boolean; onRegenerate: () => void }) {
-  if (loading) return <div className="loading-overlay" style={{ height: '100%' }}><div className="spinner" /><span>Crafting your cover letter...</span></div>;
-  if (!letter) return <div className="empty-state" style={{ height: '100%' }}><div className="empty-state-icon"><FileText size={28} /></div><p className="empty-state-title">No cover letter yet</p><p className="empty-state-text">Click &quot;Cover Letter&quot; to generate a tailored letter.</p></div>;
+function CoverLetterView({ letter, onUpdateLetter, loading, onRegenerate }: { letter: string; onUpdateLetter: (value: string) => void; loading: boolean; onRegenerate: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftLetter, setDraftLetter] = useState(letter);
+
+  useEffect(() => setDraftLetter(letter), [letter]);
+
+  if (loading) return <div className="loading-overlay" style={{ height: '100%' }}><div className="spinner" /><span>Crafting your Harvard-standard cover letter...</span></div>;
+  if (!letter) return <div className="empty-state" style={{ height: '100%' }}><div className="empty-state-icon"><FileText size={28} /></div><p className="empty-state-title">No cover letter yet</p><p className="empty-state-text">Click &quot;Cover Letter&quot; to generate an executive tailored letter.</p></div>;
+
+  const displayLetter = cleanCoverLetter(letter);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(displayLetter);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      await registerInterFont();
+      const blob = await pdf(<CoverLetterPDF text={displayLetter} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cover_letter.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div className="paper-actions">
-        <button className="btn btn-ghost btn-sm" onClick={onRegenerate}>
-          <RotateCcw size={14} /> Regenerate
-        </button>
-        <button className="btn btn-primary btn-sm" onClick={() => {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([letter], { type: 'text/plain' }));
-          a.download = 'cover_letter.txt';
-          a.click();
-        }}><Download size={14} /> Download TXT</button>
+      <div className="paper-actions cover-letter-actions" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+        <span className="cover-letter-toolbar-label">Cover letter</span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {isEditing ? <>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setDraftLetter(letter); setIsEditing(false); }}><X size={14} /> Cancel</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => { onUpdateLetter(draftLetter); setIsEditing(false); }}><Check size={14} /> Save edits</button>
+          </> : <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setDraftLetter(displayLetter); setIsEditing(true); }} style={{ fontSize: 12 }}><Pencil size={14} /> Edit letter</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={handleCopy} style={{ fontSize: 12 }}>
+              {copied ? <><Check size={14} style={{ color: 'var(--accent-green)' }} /> Copied!</> : <><Copy size={14} /> Copy Letter</>}
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onRegenerate} style={{ fontSize: 12 }}><RotateCcw size={14} /> Regenerate</button>
+            <button type="button" className="btn btn-primary btn-sm" style={{ fontSize: 12 }} onClick={handleDownloadPDF} disabled={downloading}>
+              {downloading ? <><div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> Exporting...</> : <><Download size={14} /> Download PDF</>}
+            </button>
+          </>}
+        </div>
       </div>
-      <div className="document-paper" style={{ whiteSpace: 'pre-wrap' }}>
-        {letter}
+      <div
+        className="document-paper"
+        style={{
+          background: '#ffffff',
+          color: '#1a1a1a',
+          padding: '48px 56px',
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          fontSize: '14px',
+          lineHeight: '1.75',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+          borderRadius: '4px',
+          whiteSpace: 'pre-wrap',
+          letterSpacing: '0.05px',
+        }}
+      >
+        {isEditing ? <div
+          aria-label="Edit generated cover letter"
+          role="textbox"
+          aria-multiline="true"
+          contentEditable
+          suppressContentEditableWarning
+          className="cover-letter-editor"
+          onInput={(event) => setDraftLetter(event.currentTarget.innerText.replace(/\u00a0/g, ' '))}
+        >{displayLetter}</div> : displayLetter}
       </div>
     </div>
   );

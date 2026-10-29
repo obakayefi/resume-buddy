@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
+import AppTopbar from '@/components/AppTopbar';
 import {
   Briefcase,
   Send,
   MessageSquare,
   Trophy,
-  XCircle,
-  TrendingUp,
   Clock,
-  Plus,
-  Settings,
+  ArrowRight,
+  Activity,
   FlaskConical,
   FileText,
+  Target,
 } from 'lucide-react';
 import type { ApplicationData } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
@@ -49,149 +49,154 @@ export default function DashboardPage() {
   };
 
   const total = applications.length;
-  const avgScore = total > 0
-    ? Math.round(applications.reduce((sum, a) => sum + (a.atsScore || 0), 0) / total)
+  const scoredApplications = applications.filter((application) => application.atsScore > 0);
+  const avgScore = scoredApplications.length > 0
+    ? Math.round(scoredApplications.reduce((sum, application) => sum + application.atsScore, 0) / scoredApplications.length)
     : 0;
 
   const recentApps = [...applications]
     .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
     .slice(0, 5);
 
+  const pipelineStatuses = [
+    { key: 'saved', label: 'Saved', count: counts.saved, tone: 'saved' },
+    { key: 'applied', label: 'Applied', count: counts.applied, tone: 'applied' },
+    { key: 'interviewing', label: 'Interviewing', count: counts.interviewing, tone: 'interviewing' },
+    { key: 'offer', label: 'Offers', count: counts.offer, tone: 'offer' },
+    { key: 'rejected', label: 'Closed', count: counts.rejected, tone: 'closed' },
+  ];
+
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content" style={{ padding: '32px 40px' }}>
-        <div className="dashboard-grid">
-          
-          {/* LEFT AREA: MAIN CONTENT */}
-          <div className="dashboard-main">
-            <div className="page-header">
-              <h1 className="page-title">Welcome back! 👋</h1>
-              <p className="page-subtitle">Here&apos;s an overview of your job search pipeline</p>
-            </div>
-
-            {/* Quick Action Hub */}
-            <div className="action-center-grid">
-              <a href="/lab" className="action-card">
-                <div className="action-card-icon"><FlaskConical size={20} /></div>
-                <div>
-                  <div className="action-card-title">AI Lab</div>
-                  <div className="action-card-desc">Optimize & Tailor</div>
-                </div>
-              </a>
-              <a href="/resume" className="action-card">
-                <div className="action-card-icon"><FileText size={20} /></div>
-                <div>
-                  <div className="action-card-title">Master Resume</div>
-                  <div className="action-card-desc">Edit Core Skills</div>
-                </div>
-              </a>
-              <a href="/applications" className="action-card">
-                <div className="action-card-icon"><Briefcase size={20} /></div>
-                <div>
-                  <div className="action-card-title">Job Log</div>
-                  <div className="action-card-desc">Track Applications</div>
-                </div>
-              </a>
-            </div>
-            
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 20 }}>Pipeline Status</h2>
-            <div className="stats-grid">
-              <div className="stat-card" style={{ '--card-accent': 'var(--accent-primary)' } as any}>
-                <div className="stat-icon indigo"><Briefcase size={22} /></div>
-                <div>
-                  <div className="stat-value">{counts.saved}</div>
-                  <div className="stat-label">Saved Jobs</div>
-                </div>
-              </div>
-              <div className="stat-card" style={{ '--card-accent': 'var(--accent-blue)' } as any}>
-                <div className="stat-icon blue"><Send size={22} /></div>
-                <div>
-                  <div className="stat-value">{counts.applied}</div>
-                  <div className="stat-label">Applied</div>
-                </div>
-              </div>
-              <div className="stat-card" style={{ '--card-accent': 'var(--accent-amber)' } as any}>
-                <div className="stat-icon amber"><MessageSquare size={22} /></div>
-                <div>
-                  <div className="stat-value">{counts.interviewing}</div>
-                  <div className="stat-label">Interviewing</div>
-                </div>
-              </div>
-            </div>
-
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 16, marginTop: 16 }}>Recent Activity</h2>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {loading ? (
-                <div className="loading-overlay" style={{ height: 200, background: 'transparent' }}>
-                  <div className="spinner" />
-                </div>
-              ) : recentApps.length === 0 ? (
-                <div className="empty-state" style={{ padding: '32px' }}>
-                  <div className="empty-state-icon"><Clock size={28} /></div>
-                  <p className="empty-state-text">No active applications found.</p>
-                </div>
-              ) : (
-                recentApps.map((app) => (
-                  <div key={app.id} className="list-row">
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{app.jobTitle}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{app.company}</div>
-                    </div>
-                    {app.atsScore > 0 && (
-                      <span className={`badge ${app.atsScore >= 70 ? 'badge-success' : app.atsScore >= 40 ? 'badge-warning' : 'badge-danger'}`}>
-                        {app.atsScore}% ATS
-                      </span>
-                    )}
-                    <span className="badge badge-info">{STATUS_LABELS[app.status] || app.status}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT AREA: SIDEBAR / STATS */}
-          <div className="dashboard-sidebar">
+      <AppTopbar />
+      <main className="main-content dashboard-content">
+        <div className="dashboard-page">
+          <section className="dashboard-welcome">
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 20 }}>Statistics</h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div className="sidebar-stat-row">
-                  <div className="circular-progress" style={{ '--progress': avgScore } as any}>
-                    <span>{avgScore}</span>
-                  </div>
-                  <div className="sidebar-stat-info">
-                    <div className="sidebar-stat-title">Avg. ATS Match</div>
-                    <div className="sidebar-stat-desc">per application</div>
-                  </div>
-                </div>
+              <div className="dashboard-eyebrow"><Activity size={14} /> YOUR JOB SEARCH</div>
+              <h1 className="page-title">Welcome back! <span aria-hidden="true">👋</span></h1>
+              <p className="page-subtitle">Your application pipeline, at a glance.</p>
+            </div>
+            <a href="/lab" className="btn btn-primary dashboard-primary-action">
+              <FlaskConical size={16} /> Tailor a resume <ArrowRight size={15} />
+            </a>
+          </section>
 
-                <div className="sidebar-stat-row">
-                  <div className="circular-progress" style={{ '--progress': Math.min(100, Math.max(0, total * 5)) } as any}>
-                    <span>{total}</span>
+          <section className="dashboard-quick-actions" aria-label="Quick actions">
+            <a href="/resume" className="action-card">
+              <span className="action-card-icon"><FileText size={19} /></span>
+              <span><strong className="action-card-title">Master Resume</strong><small className="action-card-desc">Edit your career profile</small></span>
+              <ArrowRight className="action-card-arrow" size={16} />
+            </a>
+            <a href="/applications" className="action-card">
+              <span className="action-card-icon"><Briefcase size={19} /></span>
+              <span><strong className="action-card-title">Job Log</strong><small className="action-card-desc">Review your applications</small></span>
+              <ArrowRight className="action-card-arrow" size={16} />
+            </a>
+            <a href="/lab" className="action-card">
+              <span className="action-card-icon"><FlaskConical size={19} /></span>
+              <span><strong className="action-card-title">The Lab</strong><small className="action-card-desc">Create tailored materials</small></span>
+              <ArrowRight className="action-card-arrow" size={16} />
+            </a>
+          </section>
+
+          <section className="dashboard-stat-grid" aria-label="Application totals">
+            <article className="dashboard-stat-card stat-saved"><span className="dashboard-stat-icon"><Briefcase size={17} /></span><span className="dashboard-stat-label">Saved</span><strong>{counts.saved}</strong><small>Roles to explore</small></article>
+            <article className="dashboard-stat-card stat-applied"><span className="dashboard-stat-icon"><Send size={17} /></span><span className="dashboard-stat-label">Applied</span><strong>{counts.applied}</strong><small>Applications sent</small></article>
+            <article className="dashboard-stat-card stat-interviewing"><span className="dashboard-stat-icon"><MessageSquare size={17} /></span><span className="dashboard-stat-label">Interviewing</span><strong>{counts.interviewing}</strong><small>Active conversations</small></article>
+            <article className="dashboard-stat-card stat-offers"><span className="dashboard-stat-icon"><Trophy size={17} /></span><span className="dashboard-stat-label">Offers</span><strong>{counts.offer}</strong><small>Positive outcomes</small></article>
+          </section>
+
+          <section className="dashboard-insights-grid" aria-label="Job search insights">
+            <article className="card dashboard-panel dashboard-pipeline-panel">
+              <div className="dashboard-panel-heading">
+                <div><span className="dashboard-panel-kicker">OVERVIEW</span><h2>Application pipeline</h2></div>
+                <a href="/applications" className="dashboard-text-link">View job log <ArrowRight size={14} /></a>
+              </div>
+              {total > 0 ? (
+                <>
+                  <div className="pipeline-summary"><strong>{total}</strong><span>tracked {total === 1 ? 'role' : 'roles'}</span></div>
+                  <div className="pipeline-bar" role="img" aria-label={pipelineStatuses.map((status) => `${status.count} ${status.label.toLowerCase()}`).join(', ')}>
+                    {pipelineStatuses.map((status) => (
+                      status.count > 0 && <span key={status.key} className={`pipeline-segment ${status.tone}`} style={{ width: `${(status.count / total) * 100}%` }} />
+                    ))}
                   </div>
-                  <div className="sidebar-stat-info">
-                    <div className="sidebar-stat-title">Total Active</div>
-                    <div className="sidebar-stat-desc">tracked jobs</div>
+                  <div className="pipeline-legend">
+                    {pipelineStatuses.map((status) => (
+                      <div key={status.key} className="pipeline-legend-item">
+                        <span className={`pipeline-legend-dot ${status.tone}`} />
+                        <span>{status.label}</span>
+                        <strong>{status.count}</strong>
+                      </div>
+                    ))}
                   </div>
+                </>
+              ) : (
+                <div className="dashboard-panel-empty"><span className="dashboard-empty-icon"><Briefcase size={20} /></span><p>Add roles to start building your pipeline.</p><a href="/applications">Open Job Log <ArrowRight size={14} /></a></div>
+              )}
+            </article>
+
+            <article className="card dashboard-panel dashboard-score-panel">
+              <div className="dashboard-panel-heading">
+                <div><span className="dashboard-panel-kicker">RESUME ALIGNMENT</span><h2>Average ATS match</h2></div>
+                <Target size={18} className="dashboard-panel-heading-icon" />
+              </div>
+              <div className="dashboard-score-content">
+                <div className="dashboard-score-ring">
+                  <svg viewBox="0 0 96 96" aria-hidden="true">
+                    <circle cx="48" cy="48" r="39" fill="none" stroke="var(--border-primary)" strokeWidth="7" />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="39"
+                      fill="none"
+                      stroke="var(--accent-primary)"
+                      strokeWidth="7"
+                      strokeDasharray={`${2 * Math.PI * 39}`}
+                      strokeDashoffset={`${2 * Math.PI * 39 * (1 - avgScore / 100)}`}
+                      transform="rotate(-90 48 48)"
+                    />
+                  </svg>
+                  <span>{scoredApplications.length ? `${avgScore}%` : '—'}</span>
+                </div>
+                <div className="dashboard-score-copy">
+                  <strong>{scoredApplications.length ? `${scoredApplications.length} ${scoredApplications.length === 1 ? 'resume scored' : 'resumes scored'}` : 'No scores yet'}</strong>
+                  <span>{scoredApplications.length ? 'Average across scored applications' : 'Analyze a role in The Lab to get an ATS match.'}</span>
+                  <a href="/lab">Analyze a role <ArrowRight size={14} /></a>
                 </div>
               </div>
-            </div>
+            </article>
+          </section>
 
-            <div className="card" style={{ marginTop: 'auto', background: 'linear-gradient(145deg, var(--bg-elevated) 0%, var(--bg-card) 100%)', textAlign: 'center', padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: 48, height: 48, background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <TrendingUp size={24} />
-              </div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Optimize Your Next Role!</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.5 }}>
-                Use AI to align your master resume exactly with the job description.
-              </p>
-              <a href="/lab" className="btn btn-primary" style={{ width: '100%', padding: '12px 0' }}>
-                Go to The Lab
-              </a>
+          <section className="card dashboard-panel dashboard-recent-panel">
+            <div className="dashboard-panel-heading">
+              <div><span className="dashboard-panel-kicker">LATEST UPDATES</span><h2>Recent applications</h2></div>
+              <a href="/applications" className="dashboard-text-link">All applications <ArrowRight size={14} /></a>
             </div>
-          </div>
-          
+            {loading ? (
+              <div className="dashboard-loading" aria-label="Loading applications"><span className="spinner" /></div>
+            ) : recentApps.length === 0 ? (
+              <div className="dashboard-panel-empty dashboard-recent-empty">
+                <span className="dashboard-empty-icon"><Clock size={20} /></span>
+                <p>No applications to show yet. Your recent activity will appear here.</p>
+                <a href="/applications">Open Job Log <ArrowRight size={14} /></a>
+              </div>
+            ) : (
+              <div className="dashboard-recent-list">
+                {recentApps.map((app) => (
+                  <div key={app.id} className="dashboard-recent-row">
+                    <span className="dashboard-company-mark"><Briefcase size={16} /></span>
+                    <div className="dashboard-recent-role"><strong>{app.jobTitle}</strong><span>{app.company}</span></div>
+                    <div className="dashboard-recent-meta">
+                      {app.atsScore > 0 && <span className={`dashboard-ats-score ${app.atsScore >= 70 ? 'strong' : app.atsScore >= 40 ? 'moderate' : 'low'}`}>{app.atsScore}% match</span>}
+                      <span className={`dashboard-status status-${app.status}`}>{STATUS_LABELS[app.status] || app.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
     </div>

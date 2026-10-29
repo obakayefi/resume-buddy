@@ -9,12 +9,15 @@ import {
   FileText,
   Briefcase,
   Settings,
-  Zap,
   PanelLeftClose,
   PanelLeftOpen,
   GraduationCap,
-  Bookmark
+  Bookmark,
+  Blocks,
+  LayoutGrid,
+  X,
 } from 'lucide-react';
+import { ApplikatorLogo } from './ApplikatorLogo';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -23,75 +26,63 @@ const navItems = [
   { href: '/scholarships', label: 'Scholarships', icon: GraduationCap },
   { href: '/story-bank', label: 'Story Bank', icon: Bookmark },
   { href: '/lab', label: 'The Lab', icon: FlaskConical },
+  { href: '/ui-kit', label: 'UI Kit', icon: Blocks },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem('sidebar-collapsed');
-    if (saved === 'true') {
-      setCollapsed(true);
+    if (localStorage.getItem('sidebar-collapsed') === 'true') {
+      const frame = window.requestAnimationFrame(() => setCollapsed(true));
+      return () => window.cancelAnimationFrame(frame);
     }
   }, []);
 
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
   const toggleCollapse = () => {
-    const newState = !collapsed;
-    setCollapsed(newState);
-    localStorage.setItem('sidebar-collapsed', String(newState));
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('sidebar-collapsed', String(next));
   };
 
-  if (!mounted) return <aside className="sidebar" />; // Avoid hydration mismatch
-
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <Link href="/" className="sidebar-logo">
-            <div className="sidebar-logo-icon">
-              <Zap size={22} fill="white" color="white" />
-            </div>
-            {!collapsed && (
-              <div>
-                <div className="sidebar-logo-text">Resume Buddy</div>
-                <div className="sidebar-logo-sub">Local AI Optimizer</div>
-              </div>
-            )}
-          </Link>
-          {!collapsed && (
-            <button className="sidebar-collapse-btn" onClick={toggleCollapse} title="Collapse sidebar">
-              <PanelLeftClose size={18} />
-            </button>
-          )}
-        </div>
-      </div>
+    <aside className={`sidebar app-topbar app-sidebar ${collapsed ? 'collapsed' : ''}`} aria-label="Application sidebar">
+      <Link href="/" className="sidebar-logo" aria-label="Applikator home">
+        <span className="sidebar-logo-icon applikator-logo-wrapper"><ApplikatorLogo size={28} /></span>
+        <span className="sidebar-logo-text">Applikator</span>
+      </Link>
 
-      <nav className="sidebar-nav">
-        {collapsed && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-             <button className="sidebar-collapse-btn" onClick={toggleCollapse} title="Expand sidebar">
-               <PanelLeftOpen size={20} />
-             </button>
-          </div>
-        )}
+      <button
+        type="button"
+        className="sidebar-mobile-menu"
+        aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        aria-expanded={mobileNavOpen}
+        aria-controls="app-mobile-navigation"
+        onClick={() => setMobileNavOpen((open) => !open)}
+      >
+        {mobileNavOpen ? <X size={19} /> : <LayoutGrid size={19} />}
+      </button>
+
+      <nav id="app-mobile-navigation" className={`sidebar-nav ${mobileNavOpen ? 'mobile-nav-open' : ''}`} aria-label="Main navigation">
         {navItems.map((item) => {
-          const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href);
+          const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`nav-link ${isActive ? 'active' : ''}`}
+              className={`nav-link ${active ? 'active' : ''}`}
               title={collapsed ? item.label : undefined}
-              style={{ justifyContent: collapsed ? 'center' : 'flex-start' }}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => setMobileNavOpen(false)}
             >
-              <item.icon size={20} />
+              <span className="sidebar-nav-icon" aria-hidden="true"><item.icon size={17} /></span>
               <span className="nav-label">{item.label}</span>
             </Link>
           );
@@ -99,31 +90,26 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-          <OllamaStatus collapsed={collapsed} />
-        </div>
+        <OllamaStatus />
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={toggleCollapse}
+          title={collapsed ? 'Expand navigation' : 'Compact navigation'}
+          aria-label={collapsed ? 'Expand navigation' : 'Compact navigation'}
+        >
+          {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+        </button>
       </div>
     </aside>
   );
 }
 
-function OllamaStatus({ collapsed }: { collapsed?: boolean }) {
+function OllamaStatus() {
   return (
-    <div 
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 10, 
-        fontSize: 12, 
-        fontWeight: 500,
-        color: 'var(--text-secondary)',
-        padding: '2px 4px'
-      }} 
-      title="Ollama Status"
-    >
-      <span className="status-dot connected" id="ollama-status-dot" style={{ width: 8, height: 8 }} />
-      {!collapsed && <span style={{ letterSpacing: '0.02em' }}>Ollama Active</span>}
+    <div className="ollama-status" title="Ollama Status">
+      <span className="status-dot connected" id="ollama-status-dot" />
+      <span className="ollama-status-label">Ollama Active</span>
     </div>
   );
 }
-
