@@ -2962,19 +2962,6 @@ body {
     min-height: 36px;
     padding-inline: 11px;
   }
-
-  .lab-ai-time {
-    width: 100%;
-  }
-
-  .lab-commit-actions {
-    width: 100%;
-  }
-
-  .lab-commit-actions .btn {
-    flex: 1;
-    justify-content: center;
-  }
 }
 
 /* Light first; these semantic values can later be switched by a theme attribute. */
@@ -4616,4 +4603,251 @@ body {
   .sidebar.app-sidebar.collapsed { grid-template-columns: minmax(0, 1fr) auto; }
   .app-sidebar .sidebar-logo { padding: 0; }
   .app-sidebar .sidebar-logo-icon { width: 34px; height: 34px; }
+}
+
+@media (max-width: 700px) {
+  .resume-diff-paper {
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 14px;
+    overflow-wrap: anywhere;
+  }
+  .resume-diff-bullet-card { min-width: 0; padding: 12px !important; }
+  .resume-diff-optimized-copy { min-width: 0; width: 100%; gap: 5px; }
+  .resume-diff-optimized-copy > span { min-width: 0; flex: 1 1 0%; overflow-wrap: anywhere; word-break: normal; }
+  .resume-diff-heading { align-items: flex-start !important; flex-direction: column; gap: 5px; }
+  .resume-diff-heading h3 { font-size: 11px !important; line-height: 1.4; }
+  .lab-execution-summary { gap: 10px; padding: 10px 12px; }
+  .lab-execution-summary .lab-ai-time { min-height: 28px; align-items: center; }
+}
+
+/* ─── Lab Execution & Finish/Draft Responsiveness ──────────────────── */
+.lab-execution-summary {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md, 8px);
+}
+
+.lab-execution-summary .lab-ai-time {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.lab-execution-summary .lab-commit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.lab-commit-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 6px;
+}
+
+@media (max-width: 1100px) {
+  .lab-results-header { align-items: stretch; gap: 10px; }
+  .lab-results-actions {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-secondary);
+  }
+}
+
+@media (max-width: 700px) {
+  .lab-results-actions {
+    display: block;
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-secondary);
+  }
+  .lab-execution-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+    padding: 12px;
+  }
+  .lab-execution-summary .lab-ai-time {
+    width: 100%;
+    justify-content: flex-start;
+    white-space: normal;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .lab-execution-summary .lab-commit-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+    margin-left: 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-secondary);
+  }
+  .lab-commit-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 8px;
+    font-size: 12px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .lab-execution-summary .lab-commit-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep Lab timing and completion controls pinned while the result document scrolls. */
+.lab-results-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.lab-results-header {
+  flex: 0 0 auto;
+}
+
+.lab-results-panel .display-panel-body {
+  order: 2;
+}
+
+.lab-results-actions {
+  order: 3;
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-secondary);
+}
+
+.lab-execution-summary {
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 3px;
+}
+
+.lab-commit-actions .btn {
+  min-height: 42px;
+  border-radius: 3px;
+}
+
+@media (max-width: 1100px) {
+  .lab-results-panel {
+    overflow: hidden;
+  }
+
+  .lab-results-panel .display-panel-body {
+    order: 2;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .lab-results-actions {
+    display: block;
+    order: 3;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border-secondary);
+    border-bottom: 0;
+  }
+
+  .lab-execution-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: 9px;
+  }
+
+  .lab-execution-summary .lab-ai-time {
+    width: 100%;
+    min-height: 28px;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .lab-execution-summary .lab-commit-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+    margin: 0;
+    padding-top: 9px;
+    border-top: 1px solid var(--border-secondary);
+  }
+
+  .lab-commit-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .lab-execution-summary .lab-commit-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .lab-results-actions {
+    padding: 6px 8px;
+  }
+
+  .lab-execution-summary {
+    gap: 5px;
+    padding: 7px 9px;
+  }
+
+  .lab-execution-summary .lab-ai-time {
+    min-height: 20px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .lab-execution-summary .lab-commit-actions {
+    gap: 6px;
+    padding-top: 6px;
+  }
+
+  .lab-commit-actions .btn {
+    min-height: 40px;
+    gap: 5px;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
 }

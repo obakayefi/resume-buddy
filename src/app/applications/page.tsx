@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import AppTopbar from '@/components/AppTopbar';
-import { Briefcase, Eye, Trash2, X, FileText, Download, Target, Sparkles, Send, Plus, Search, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Briefcase, Eye, Trash2, X, FileText, Download, Target, Sparkles, Send, Plus, Search, ChevronRight, CheckCircle2, FlaskConical, ArrowRight } from 'lucide-react';
 import type { ApplicationData, MasterResumeData, OptimizedBullet } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import PDFDownloadButton from '@/components/PDFDownloadButton';
@@ -177,10 +178,10 @@ export default function ApplicationsPage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 10, borderTop: '1px solid var(--border-secondary)', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 10, borderTop: '1px solid var(--border-secondary)', gap: 6 }}>
                   <select 
                     className="form-select" 
-                    style={{ fontSize: 11, padding: '4px 8px', height: 'auto', flex: 1 }}
+                    style={{ fontSize: 11, padding: '4px 8px', height: 'auto', flex: 1, minWidth: 0 }}
                     value={app.status}
                     onChange={(e) => updateStatus(app.id!, e.target.value)}
                   >
@@ -189,15 +190,27 @@ export default function ApplicationsPage() {
                     ))}
                   </select>
 
-                  {app.status === 'saved' && (
-                    <button
-                      className="btn btn-primary btn-sm"
-                      style={{ padding: '4px 8px', fontSize: 11 }}
-                      onClick={() => updateStatus(app.id!, 'applied')}
-                    >
-                      Apply
-                    </button>
-                  )}
+                  {/* 1-click status stepper */}
+                  {(() => {
+                    const nextStatus: Record<string, { status: string; label: string }> = {
+                      saved: { status: 'applied', label: 'Applied' },
+                      applied: { status: 'interviewing', label: 'Interview' },
+                      interviewing: { status: 'offer', label: 'Offer' },
+                    };
+                    const next = nextStatus[app.status];
+                    if (!next) return null;
+                    return (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        style={{ padding: '4px 8px', fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}
+                        onClick={() => updateStatus(app.id!, next.status)}
+                        title={`Move to ${next.label}`}
+                      >
+                        <ArrowRight size={11} />
+                        {next.label}
+                      </button>
+                    );
+                  })()}
                   
                   {(() => {
                     if (!app.optimizedResume || app.optimizedResume === '') return null;
@@ -318,6 +331,7 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
   onClose: () => void;
   masterResume?: MasterResumeData;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'resume' | 'cover' | 'outreach' | 'job'>('resume');
   let optimizedBullets: OptimizedBullet[] = [];
   let savedResume: MasterResumeData | undefined;
@@ -336,13 +350,20 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
 
   const totalAI = Object.values(generationTimes).reduce((a, b) => a + Number(b), 0);
 
+  const handleOpenInLab = () => {
+    const params = new URLSearchParams();
+    params.set('appId', app.id!);
+    if (app.masterResumeId) params.set('resumeId', app.masterResumeId);
+    router.push(`/lab?${params.toString()}`);
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 900, width: '90%', height: '85vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 className="modal-title" style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{app.jobTitle} @ {app.company}</h2>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <span>{STATUS_LABELS[app.status]} — Created on {new Date(app.createdAt || '').toLocaleDateString()}</span>
               {totalAI > 0 && (
                 <span className="badge badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)', fontSize: 11 }}>
@@ -351,9 +372,19 @@ function ApplicationDetailModal({ app, onClose, masterResume }: {
               )}
             </div>
           </div>
-          <button className="btn btn-ghost btn-icon" onClick={onClose}>
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleOpenInLab}
+              title="Re-open this application in the Lab to continue tailoring"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '6px 14px', whiteSpace: 'nowrap' }}
+            >
+              <FlaskConical size={14} /> Re-open in Lab
+            </button>
+            <button className="btn btn-ghost btn-icon" onClick={onClose}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
         
         <div className="modal-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border-secondary)', padding: '0 24px', background: 'var(--bg-secondary)' }}>

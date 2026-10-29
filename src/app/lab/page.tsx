@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import type { ElementType } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import AppTopbar from '@/components/AppTopbar';
 import { SelectField, Tabs, TextField } from '@/components/ui';
@@ -152,25 +153,71 @@ export default function LabPage() {
     }
   }, []);
 
-  // Check localStorage on mount
+  const searchParams = useSearchParams();
+  const queryAppId = searchParams.get('appId');
+  const queryResumeId = searchParams.get('resumeId');
+
+  // Check query params and localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('resume-buddy-lab-state');
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        if (state.applicationId || state.company || state.jobDescription) {
-          setSavedData(state);
-          setShowRestorePrompt(true);
-        } else {
+    async function loadFromQueryOrStorage() {
+      if (queryAppId) {
+        try {
+          const appRes = await fetch(`/api/applications/${queryAppId}`);
+          if (appRes.ok) {
+            const app = await appRes.json();
+            setApplicationId(app.id);
+            setCompany(app.company || '');
+            setJobTitle(app.jobTitle || '');
+            setJobDescription(app.jobDescription || '');
+            setExtraInfo(app.extraInfo || '');
+            setRecruiterName(app.recruiterName || '');
+            setApplicationStatus(app.status === 'applied' ? 'applied' : 'saved');
+            if (app.optimizedSummary) setOptimizedSummary(app.optimizedSummary);
+            if (app.coverLetter) setCoverLetter(app.coverLetter);
+            if (app.linkedinMessage) setLinkedinMessage(app.linkedinMessage);
+            if (app.generationTimes) {
+              try {
+                setGenerationTimes(typeof app.generationTimes === 'string' ? JSON.parse(app.generationTimes) : app.generationTimes);
+              } catch (e) {}
+            }
+            if (app.optimizedResume) {
+              try {
+                const parsed = JSON.parse(app.optimizedResume);
+                if (Array.isArray(parsed)) {
+                  setOptimizedBullets(parsed);
+                } else if (parsed?.bullets) {
+                  setOptimizedBullets(parsed.bullets);
+                }
+              } catch (e) {}
+            }
+            setIsInitialized(true);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to load application from appId query:', e);
+        }
+      }
+
+      const saved = localStorage.getItem('resume-buddy-lab-state');
+      if (saved) {
+        try {
+          const state = JSON.parse(saved);
+          if (state.applicationId || state.company || state.jobDescription) {
+            setSavedData(state);
+            setShowRestorePrompt(true);
+          } else {
+            setIsInitialized(true);
+          }
+        } catch (e) {
           setIsInitialized(true);
         }
-      } catch (e) {
+      } else {
         setIsInitialized(true);
       }
-    } else {
-      setIsInitialized(true);
     }
-  }, []);
+
+    loadFromQueryOrStorage();
+  }, [queryAppId]);
 
   const handleRestore = (restore: boolean) => {
     if (restore && savedData) {
@@ -858,24 +905,6 @@ export default function LabPage() {
                 idPrefix="lab-results"
                 className="lab-results-tabs"
               />
-
-              <div className="lab-results-actions">
-                {Object.keys(generationTimes).length > 0 && (
-                  <div className="lab-ai-time">
-                    Total AI time <strong>{(Object.values(generationTimes).reduce((a, b) => a + b, 0) / 1000).toFixed(1)}s</strong>
-                  </div>
-                )}
-                {(analysis || optimizedBullets.length > 0 || coverLetter) && applicationStatus !== 'applied' && (
-                  <div className="lab-commit-actions">
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleSaveApplication('saved')} disabled={saving}>
-                      <Save size={14} /> {saving && applicationStatus === 'saved' ? '...' : 'Save Draft'}
-                    </button>
-                    <button className="btn btn-primary btn-sm" onClick={() => handleSaveApplication('applied')} disabled={saving}>
-                      <CheckCircle2 size={14} /> Finish
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="display-panel-body" id={`panel-lab-results-${activeTab}`} role="tabpanel" aria-labelledby={`tab-lab-results-${activeTab}`} style={{ background: activeTab === 'optimize' || activeTab === 'cover' ? 'var(--bg-primary)' : 'transparent' }}>
@@ -916,6 +945,28 @@ export default function LabPage() {
                 />
               )}
             </div>
+
+            {((analysis || optimizedBullets.length > 0 || coverLetter) || Object.keys(generationTimes).length > 0) && (
+              <div className="lab-results-actions">
+                <div className="lab-execution-summary">
+                  <div className="lab-ai-time">
+                    {Object.keys(generationTimes).length > 0 ? <>
+                      Total AI time <strong>{(Object.values(generationTimes).reduce((a, b) => a + b, 0) / 1000).toFixed(1)}s</strong>
+                    </> : <><span className="status-dot connected" /> Generation complete</>}
+                  </div>
+                  {(analysis || optimizedBullets.length > 0 || coverLetter) && (
+                    <div className="lab-commit-actions">
+                      <button className="btn btn-ghost btn-sm" title={applicationStatus === 'applied' ? 'This application is already marked as applied.' : undefined} onClick={() => handleSaveApplication('saved')} disabled={saving || applicationStatus === 'applied'}>
+                        <Save size={14} /> {saving && applicationStatus === 'saved' ? 'Saving…' : 'Save Draft'}
+                      </button>
+                      <button className="btn btn-primary btn-sm" title={applicationStatus === 'applied' ? 'Application marked as applied.' : undefined} onClick={() => handleSaveApplication('applied')} disabled={saving || applicationStatus === 'applied'}>
+                        <CheckCircle2 size={14} /> {saving ? 'Finishing…' : applicationStatus === 'applied' ? 'Finished' : 'Finish'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         {error && (
@@ -1222,21 +1273,21 @@ function OptimizeView({ bullets, onUpdateBullets, summary, onUpdateSummary, onUp
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-primary)', paddingBottom: 6 }}>
+              <div className="resume-diff-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border-primary)', paddingBottom: 6 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, textTransform: 'uppercase', color: 'var(--accent-green)', margin: 0 }}>
               Tailored Experience Bullets ({bullets.length})
             </h3>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Google XYZ & STAR Impact Format</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="resume-diff-bullet-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {(isEditingOutput ? editBullets : bullets).map((b, i) => (
-              <div key={i} style={{ padding: 16, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
+              <div key={i} className="resume-diff-bullet-card" style={{ padding: 16, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8, fontStyle: 'italic', textDecoration: 'line-through', opacity: 0.7 }}>
                   {b.original}
                 </div>
                 {isEditingOutput ? <EditableText editing value={b.optimized} onCommit={(value) => updateBullet(i, value)} as="div" className="resume-editable-text-block" /> :
-                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start' }}><BulletDot color="var(--accent-green)" size={4.5} top={6.5} /><span>{b.optimized}</span></div>}
+                  <div className="resume-diff-optimized-copy" style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start' }}><BulletDot color="var(--accent-green)" size={4.5} top={6.5} /><span>{b.optimized}</span></div>}
                 <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
                   <span className={`badge ${b.relevance === 'high' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: 10 }}>
                     {b.relevance ? `${b.relevance.toUpperCase()} ATS RELEVANCE` : 'ATS OPTIMIZED'}
