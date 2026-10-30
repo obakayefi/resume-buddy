@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const defaultPrompts: Record<string, string> = {
   'analyze': `You are an expert ATS (Applicant Tracking System) analyst. Compare a resume against a job description and provide a detailed gap analysis.
 
@@ -183,6 +185,7 @@ export async function POST(request: Request) {
       candidateWebsite,
       candidateLinkedin,
       stories,
+      stream: clientStream,
     } = await request.json();
 
     let settingsObj = null;
@@ -196,10 +199,10 @@ export async function POST(request: Request) {
       console.warn('Could not read settings from DB (using defaults / client params):', (dbErr as any)?.message || dbErr);
     }
 
-    let resolvedStories: Array<{ title: string; category?: string; content: string }> = Array.isArray(stories) ? stories : [];
+    let resolvedStories: Array<{ title: string; category?: string; content: string }> = Array.isArray(stories) ? stories.slice(0, 2) : [];
     if (resolvedStories.length === 0 && (action === 'cover-letter' || action === 'qa-chat' || action === 'optimize')) {
       try {
-        resolvedStories = await prisma.storyBankItem.findMany({ take: 6, orderBy: { createdAt: 'desc' } });
+        resolvedStories = await prisma.storyBankItem.findMany({ take: 2, orderBy: { createdAt: 'desc' } });
       } catch (err) {
         console.warn('Could not load StoryBankItems from DB:', err);
       }
@@ -441,7 +444,7 @@ Transform the raw details above into a high-impact, professional STAR (Situation
     }
 
     const isJsonAction = action === 'analyze' || action === 'optimize' || action === 'scholarship-essay-critique';
-    const isStreamAction = action === 'cover-letter' || action === 'linkedin-message' || action === 'qa-chat' || action === 'scholarship-essay-draft' || action === 'scholarship-essay-trim' || action === 'polish-star';
+    const isStreamAction = clientStream === true || action === 'cover-letter' || action === 'linkedin-message' || action === 'qa-chat' || action === 'scholarship-essay-draft' || action === 'scholarship-essay-trim' || action === 'polish-star';
 
     const res = await fetchWithFailover('/api/generate', {
       method: 'POST',
@@ -452,7 +455,11 @@ Transform the raw details above into a high-impact, professional STAR (Situation
         system: systemPrompt,
         stream: isStreamAction,
         format: isJsonAction ? 'json' : undefined,
-        options: { temperature: 0.3, num_ctx: 4096 },
+        options: {
+          temperature: 0.3,
+          num_ctx: 2048,
+          num_predict: isJsonAction ? 800 : undefined,
+        },
       }),
     }, ollamaUrl);
 

@@ -105,6 +105,26 @@ function resumeToText(resume: MasterResumeData): string {
   return text;
 }
 
+async function parseErrorResponse(res: Response, fallback: string): Promise<string> {
+  try {
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      return data.error || data.message || fallback;
+    } catch {
+      if (res.status === 504 || text.includes('504') || text.toLowerCase().includes('gateway timeout')) {
+        return 'Server Timeout (504): The LLM took longer than the server limit. Please try again or switch to a faster model.';
+      }
+      if (res.status === 502 || text.includes('502') || text.toLowerCase().includes('bad gateway')) {
+        return 'Bad Gateway (502): The Ollama server or proxy is unreachable. Please verify your Ollama URL in Settings.';
+      }
+      return `Server error (${res.status}): ${text.slice(0, 150)}`;
+    }
+  } catch {
+    return fallback;
+  }
+}
+
 function formatOllamaError(e: unknown, modelName: string, baseUrl: string): string {
   if (e instanceof Error) {
     const msg = e.message.toLowerCase();
@@ -112,7 +132,10 @@ function formatOllamaError(e: unknown, modelName: string, baseUrl: string): stri
       return `Out of Memory: ${modelName} requires more RAM than currently available. Try switching to a lighter model (e.g. phi3 or tinyllama).`;
     }
     if (msg.includes('fetch failed') || msg.includes('failed to fetch') || msg.includes('econnrefused')) {
-      return `Cannot connect to Ollama at ${baseUrl}. Ensure Ollama is running locally ('ollama serve').`;
+      return `Cannot connect to Ollama at ${baseUrl}. Ensure Ollama is running ('ollama serve') or check network settings.`;
+    }
+    if (msg.includes('unexpected token') && (msg.includes('<') || msg.includes('json'))) {
+      return `Server Timeout or Proxy Error: The server returned an HTML error page instead of valid JSON. This usually indicates a 504 Gateway Timeout or unreachable proxy for ${baseUrl}.`;
     }
     return e.message;
   }
@@ -440,16 +463,39 @@ function LabContent() {
           resume: resumeToText(selectedResume),
           jobDescription,
           action: 'analyze',
+          stream: true,
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
         }),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Analysis failed');
+        const errMsg = await parseErrorResponse(res, 'Analysis failed');
+        throw new Error(errMsg);
       }
-      const data = await res.json();
-      setAnalysis(data.result);
+
+      const reader = res.body?.getReader();
+      let fullText = '';
+      if (reader) {
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+        }
+      } else {
+        fullText = await res.text();
+      }
+
+      let parsedResult: any = null;
+      try {
+        const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+        parsedResult = JSON.parse(jsonMatch ? jsonMatch[0] : fullText);
+      } catch (parseErr) {
+        throw new Error('Analysis produced unparseable output. Please try again.');
+      }
+
+      const dataResult = parsedResult.result || parsedResult;
+      setAnalysis(dataResult);
       setGenerationTimes(prev => ({ ...prev, analyze: (prev.analyze || 0) + (Date.now() - startTime) }));
       setActiveTab('analysis');
       notify('Analysis Ready!', 'Resume analysis against JD is complete.');
@@ -482,18 +528,41 @@ function LabContent() {
           resume: resumeToText(selectedResume),
           jobDescription,
           action: 'optimize',
+          stream: true,
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
-          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
+          stories: (matchedStories.length > 0 ? matchedStories : storyBankItems).slice(0, 2),
         }),
       });
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Optimization failed');
+        const errMsg = await parseErrorResponse(res, 'Optimization failed');
+        throw new Error(errMsg);
       }
-      const data = await res.json();
-      setOptimizedBullets(data.result.bullets || []);
-      setOptimizedSummary(data.result.optimizedSummary || '');
+
+      const reader = res.body?.getReader();
+      let fullText = '';
+      if (reader) {
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+        }
+      } else {
+        fullText = await res.text();
+      }
+
+      let parsedResult: any = null;
+      try {
+        const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+        parsedResult = JSON.parse(jsonMatch ? jsonMatch[0] : fullText);
+      } catch (parseErr) {
+        throw new Error('Optimization produced unparseable output. Please try again.');
+      }
+
+      const resObj = parsedResult.result || parsedResult;
+      setOptimizedBullets(resObj.bullets || []);
+      setOptimizedSummary(resObj.optimizedSummary || '');
       setGenerationTimes(prev => ({ ...prev, optimize: (prev.optimize || 0) + (Date.now() - startTime) }));
       setActiveTab('optimize');
       notify('Optimization Ready!', 'Tailored bullet points are ready.');
@@ -537,17 +606,16 @@ function LabContent() {
           action: 'cover-letter',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
-          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
+          stories: (matchedStories.length > 0 ? matchedStories : storyBankItems).slice(0, 2),
         }),
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        const msg = errData.error || '';
+        const msg = await parseErrorResponse(res, 'Cover letter generation failed');
         if (msg.toLowerCase().includes('system memory')) {
           throw new Error('Out of Memory: ' + (labModel || ollamaSettings.model) + ' is too large for your RAM. Try switching to phi3 or tinyllama.');
         }
-        throw new Error(msg || 'Cover letter generation failed');
+        throw new Error(msg);
       }
 
       const reader = res.body?.getReader();
@@ -608,12 +676,11 @@ function LabContent() {
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        const msg = errData.error || '';
+        const msg = await parseErrorResponse(res, 'LinkedIn message generation failed');
         if (msg.toLowerCase().includes('system memory')) {
           throw new Error('Out of Memory: ' + (labModel || ollamaSettings.model) + ' is too large for your RAM. Try switching to phi3 or tinyllama.');
         }
-        throw new Error(msg || 'LinkedIn message generation failed');
+        throw new Error(msg);
       }
 
       const reader = res.body?.getReader();
@@ -662,17 +729,16 @@ function LabContent() {
           action: 'qa-chat',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
-          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
+          stories: (matchedStories.length > 0 ? matchedStories : storyBankItems).slice(0, 2),
         }),
       });
 
       if (!res.ok) {
-        const errData = await res.json();
-        const msg = errData.error || '';
+        const msg = await parseErrorResponse(res, 'Chat failed');
         if (msg.toLowerCase().includes('system memory')) {
           throw new Error('Out of Memory: ' + (labModel || ollamaSettings.model) + ' is too large for your RAM. Try switching to phi3 or tinyllama.');
         }
-        throw new Error(msg || 'Chat failed');
+        throw new Error(msg);
       }
 
       const reader = res.body?.getReader();
