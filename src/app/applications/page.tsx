@@ -68,25 +68,35 @@ export default function ApplicationsPage() {
   }, [fetchData]);
 
   const updateStatus = async (id: string, status: string) => {
+    const previousApps = apps;
+    setApps(prev => prev.map(a => a.id === id ? { ...a, status: status as any } : a));
     try {
-      await fetch(`/api/applications/${id}`, {
+      const res = await fetch(`/api/applications/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
       });
-      fetchData();
+      if (!res.ok) {
+        throw new Error('Failed to update status');
+      }
     } catch(e) {
-      console.error(e);
+      console.error('Failed to update status, rolling back:', e);
+      setApps(previousApps);
     }
   };
 
   const deleteApp = async (id: string) => {
     if (!await confirm({ title: 'Delete application?', description: 'This will remove the application and its saved details.', confirmLabel: 'Delete application' })) return;
+    const previousApps = apps;
+    setApps(prev => prev.filter(a => a.id !== id));
     try {
-      await fetch(`/api/applications/${id}`, { method: 'DELETE' });
-      fetchData();
+      const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error('Failed to delete application');
+      }
     } catch(e) {
-      console.error(e);
+      console.error('Failed to delete application, rolling back:', e);
+      setApps(previousApps);
     }
   };
 

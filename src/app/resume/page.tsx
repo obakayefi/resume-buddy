@@ -3,9 +3,47 @@
 import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AppTopbar from '@/components/AppTopbar';
-import { Save, Plus, Trash2, Edit2, FileText, GraduationCap, Briefcase, Award, Globe, Link, ExternalLink } from 'lucide-react';
+import { Save, Plus, Trash2, Edit2, FileText, GraduationCap, Briefcase, Award, Globe, Link, ExternalLink, ChevronUp, ChevronDown, Check, Sparkles } from 'lucide-react';
 import type { MasterResumeData, Experience, Education, SkillGroup, Project, Certification } from '@/lib/types';
 import { useConfirmDialog } from '@/components/ui';
+
+const STRONG_ACTION_VERBS = new Set([
+  'accelerated', 'achieved', 'administered', 'advised', 'analyzed', 'architected', 'automated',
+  'built', 'championed', 'coached', 'collaborated', 'consolidated', 'constructed', 'converted',
+  'coordinated', 'created', 'decreased', 'delivered', 'deployed', 'designed', 'developed',
+  'devised', 'directed', 'documented', 'drove', 'engineered', 'enhanced', 'established',
+  'evaluated', 'executed', 'expanded', 'expedited', 'facilitated', 'formulated', 'generated',
+  'guided', 'headed', 'identified', 'implemented', 'improved', 'increased', 'initiated',
+  'innovated', 'inspected', 'instituted', 'integrated', 'introduced', 'invented', 'launched',
+  'lead', 'led', 'managed', 'maximized', 'mentored', 'migrated', 'minimized', 'modernized',
+  'negotiated', 'orchestrated', 'organized', 'overhauled', 'oversaw', 'partnered', 'pioneered',
+  'planned', 'produced', 'programmed', 'published', 're-engineered', 'rebuilt', 'redesigned',
+  'reduced', 'refined', 'refactored', 'resolved', 'restructured', 'revamped', 'revitalized',
+  'scaled', 'secured', 'simplified', 'spearheaded', 'standardized', 'streamlined', 'strengthened',
+  'structured', 'supervised', 'surpassed', 'trained', 'transformed', 'upgraded', 'validated'
+]);
+
+function inspectBullet(bullet: string) {
+  const trimmed = bullet.trim();
+  const len = trimmed.length;
+  const firstWord = (trimmed.split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z]/g, '');
+  const hasStrongVerb = STRONG_ACTION_VERBS.has(firstWord);
+  
+  let lengthRating: 'good' | 'warn' | 'bad' = 'good';
+  let lengthFeedback = 'Optimal length';
+  if (len === 0) {
+    lengthRating = 'bad';
+    lengthFeedback = 'Empty bullet';
+  } else if (len < 50) {
+    lengthRating = 'warn';
+    lengthFeedback = 'Too brief (aim for 80-180 chars)';
+  } else if (len > 220) {
+    lengthRating = 'warn';
+    lengthFeedback = 'Too verbose for ATS quick scan';
+  }
+
+  return { len, firstWord, hasStrongVerb, lengthRating, lengthFeedback };
+}
 
 export default function ResumePage() {
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
@@ -16,6 +54,20 @@ export default function ResumePage() {
   const [success, setSuccess] = useState('');
 
   const [activeResume, setActiveResume] = useState<MasterResumeData | null>(null);
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>('');
+
+  const isDirty = Boolean(activeResume && lastSavedSnapshot && JSON.stringify(activeResume) !== lastSavedSnapshot);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const fetchResumes = useCallback(async () => {
     try {
@@ -33,6 +85,7 @@ export default function ResumePage() {
         setResumes(formattedData);
         if (formattedData.length > 0 && !activeResume) {
           setActiveResume(formattedData[0]);
+          setLastSavedSnapshot(JSON.stringify(formattedData[0]));
         }
       }
     } catch (e) {
@@ -46,6 +99,20 @@ export default function ResumePage() {
   useEffect(() => {
     fetchResumes();
   }, [fetchResumes]);
+
+  const handleSelectResume = async (targetResume: MasterResumeData) => {
+    if (isDirty) {
+      if (!await confirm({
+        title: 'Unsaved Changes',
+        description: 'You have unsaved changes on this resume. Switching will discard those changes. Continue?',
+        confirmLabel: 'Discard & Switch'
+      })) {
+        return;
+      }
+    }
+    setActiveResume(targetResume);
+    setLastSavedSnapshot(JSON.stringify(targetResume));
+  };
 
   const handleSave = async () => {
     if (!activeResume) return;
@@ -77,6 +144,7 @@ export default function ResumePage() {
 
       setSuccess('Resume saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
+      setLastSavedSnapshot(JSON.stringify(formattedSaved));
       
       if (isNew) {
         setResumes([formattedSaved, ...resumes]);
@@ -102,7 +170,9 @@ export default function ResumePage() {
       
       const newResumes = resumes.filter(r => r.id !== activeResume.id);
       setResumes(newResumes);
-      setActiveResume(newResumes.length > 0 ? newResumes[0] : null);
+      const nextActive = newResumes.length > 0 ? newResumes[0] : null;
+      setActiveResume(nextActive);
+      setLastSavedSnapshot(nextActive ? JSON.stringify(nextActive) : '');
       setSuccess('Resume deleted');
       setTimeout(() => setSuccess(''), 3000);
     } catch (e) {
@@ -110,7 +180,16 @@ export default function ResumePage() {
     }
   };
 
-  const createNewResume = () => {
+  const createNewResume = async () => {
+    if (isDirty) {
+      if (!await confirm({
+        title: 'Unsaved Changes',
+        description: 'You have unsaved changes on this resume. Creating a new base will discard them. Continue?',
+        confirmLabel: 'Discard & Create'
+      })) {
+        return;
+      }
+    }
     const newResume: MasterResumeData = {
       name: 'New Master Resume',
       title: 'Job Title',
@@ -129,6 +208,49 @@ export default function ResumePage() {
       certifications: [],
     };
     setActiveResume(newResume);
+    setLastSavedSnapshot(JSON.stringify(newResume));
+  };
+
+  const moveExperience = (expId: string, direction: 'up' | 'down') => {
+    if (!activeResume) return;
+    const index = activeResume.experience.findIndex(e => e.id === expId);
+    if (index === -1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= activeResume.experience.length) return;
+    const newExp = [...activeResume.experience];
+    const [moved] = newExp.splice(index, 1);
+    newExp.splice(targetIndex, 0, moved);
+    setActiveResume({ ...activeResume, experience: newExp });
+  };
+
+  const moveExpBullet = (expId: string, bulletIndex: number, direction: 'up' | 'down') => {
+    if (!activeResume) return;
+    const targetIndex = direction === 'up' ? bulletIndex - 1 : bulletIndex + 1;
+    setActiveResume({
+      ...activeResume,
+      experience: activeResume.experience.map(e => {
+        if (e.id === expId) {
+          if (targetIndex < 0 || targetIndex >= e.bullets.length) return e;
+          const newBullets = [...e.bullets];
+          const [moved] = newBullets.splice(bulletIndex, 1);
+          newBullets.splice(targetIndex, 0, moved);
+          return { ...e, bullets: newBullets };
+        }
+        return e;
+      }),
+    });
+  };
+
+  const moveProject = (projId: string, direction: 'up' | 'down') => {
+    if (!activeResume) return;
+    const index = activeResume.projects.findIndex(p => p.id === projId);
+    if (index === -1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= activeResume.projects.length) return;
+    const newProjects = [...activeResume.projects];
+    const [moved] = newProjects.splice(index, 1);
+    newProjects.splice(targetIndex, 0, moved);
+    setActiveResume({ ...activeResume, projects: newProjects });
   };
 
   const addExperience = () => {
@@ -347,8 +469,27 @@ export default function ResumePage() {
                 <Trash2 size={16} /> Delete
               </button>
             )}
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !activeResume}>
-              <Save size={16} /> {saving ? 'Saving...' : 'Save Master'}
+            <button
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving || !activeResume}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+            >
+              <Save size={16} />
+              <span>{saving ? 'Saving...' : 'Save Master'}</span>
+              {isDirty && (
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-amber)',
+                    boxShadow: '0 0 6px var(--accent-amber)',
+                    display: 'inline-block'
+                  }}
+                  title="Unsaved changes"
+                />
+              )}
             </button>
           </div>
         </div>
@@ -387,10 +528,25 @@ export default function ResumePage() {
                     <button
                       key={r.id}
                       className={`resume-saved-item ${r.id === activeResume.id ? 'active' : ''}`}
-                      onClick={() => setActiveResume(r)}
+                      onClick={() => handleSelectResume(r)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}
                     >
-                      <FileText size={15} aria-hidden="true" />
-                      <span>{r.name || 'Untitled'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                        <FileText size={15} aria-hidden="true" style={{ flexShrink: 0 }} />
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name || 'Untitled'}</span>
+                      </div>
+                      {r.id === activeResume.id && isDirty && (
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--accent-amber)',
+                            flexShrink: 0
+                          }}
+                          title="Unsaved changes"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -523,16 +679,42 @@ export default function ResumePage() {
                   </button>
                 </div>
                 
-                {activeResume.experience.map((exp) => (
+                {activeResume.experience.map((exp, expIdx) => (
                   <div key={exp.id} className="experience-card">
                     <div className="experience-card-header">
                        <div className="form-row" style={{ flex: 1, gap: 12 }}>
                          <input className="form-input" placeholder="Job Title" value={exp.title} onChange={(e) => updateExperience(exp.id, 'title', e.target.value)} />
                          <input className="form-input" placeholder="Company" value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} />
                        </div>
-                       <button className="btn btn-ghost btn-icon" style={{ marginLeft: 12, color: 'var(--accent-red)' }} onClick={() => removeExperience(exp.id)}>
-                         <Trash2 size={16} />
-                       </button>
+                       <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginLeft: 12 }}>
+                         <button
+                           type="button"
+                           className="btn btn-ghost btn-icon btn-sm"
+                           disabled={expIdx === 0}
+                           onClick={() => moveExperience(exp.id, 'up')}
+                           title="Move role up"
+                         >
+                           <ChevronUp size={16} />
+                         </button>
+                         <button
+                           type="button"
+                           className="btn btn-ghost btn-icon btn-sm"
+                           disabled={expIdx === activeResume.experience.length - 1}
+                           onClick={() => moveExperience(exp.id, 'down')}
+                           title="Move role down"
+                         >
+                           <ChevronDown size={16} />
+                         </button>
+                         <button
+                           type="button"
+                           className="btn btn-ghost btn-icon btn-sm"
+                           style={{ color: 'var(--accent-red)' }}
+                           onClick={() => removeExperience(exp.id)}
+                           title="Remove role"
+                         >
+                           <Trash2 size={16} />
+                         </button>
+                       </div>
                     </div>
                     
                     <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -540,22 +722,77 @@ export default function ResumePage() {
                       <input className="form-input" placeholder="End Date" value={exp.endDate} onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)} style={{ width: 150 }} />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {exp.bullets.map((bullet, bIdx) => (
-                        <div key={bIdx} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                          <span style={{ display: 'inline-block', width: 5, height: 5, minWidth: 5, minHeight: 5, borderRadius: '50%', backgroundColor: 'var(--text-muted)', marginTop: 14, flexShrink: 0 }} />
-                          <textarea 
-                            className="form-textarea" 
-                            style={{ minHeight: 40, padding: '8px 12px' }} 
-                            value={bullet} 
-                            onChange={(e) => updateExpBullet(exp.id, bIdx, e.target.value)}
-                          />
-                          <button className="btn btn-ghost btn-icon" onClick={() => removeExpBullet(exp.id, bIdx)}>
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                      <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', marginTop: 8 }} onClick={() => addExpBullet(exp.id)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {exp.bullets.map((bullet, bIdx) => {
+                        const inspection = inspectBullet(bullet);
+                        return (
+                          <div key={bIdx} style={{ background: 'var(--bg-secondary)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-secondary)' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                              <span style={{ display: 'inline-block', width: 6, height: 6, minWidth: 6, minHeight: 6, borderRadius: '50%', backgroundColor: 'var(--text-muted)', marginTop: 12, flexShrink: 0 }} />
+                              <textarea 
+                                className="form-textarea" 
+                                style={{ minHeight: 44, padding: '8px 12px', flex: 1 }} 
+                                placeholder="Action verb + scope + measurable metric (e.g. Architected microservices cutting latency 35%)..."
+                                value={bullet} 
+                                onChange={(e) => updateExpBullet(exp.id, bIdx, e.target.value)}
+                              />
+                              <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-icon btn-sm"
+                                  style={{ width: 28, height: 28, padding: 0 }}
+                                  disabled={bIdx === 0}
+                                  onClick={() => moveExpBullet(exp.id, bIdx, 'up')}
+                                  title="Move bullet up"
+                                >
+                                  <ChevronUp size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-icon btn-sm"
+                                  style={{ width: 28, height: 28, padding: 0 }}
+                                  disabled={bIdx === exp.bullets.length - 1}
+                                  onClick={() => moveExpBullet(exp.id, bIdx, 'down')}
+                                  title="Move bullet down"
+                                >
+                                  <ChevronDown size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-icon btn-sm"
+                                  style={{ width: 28, height: 28, padding: 0, color: 'var(--accent-red)' }}
+                                  onClick={() => removeExpBullet(exp.id, bIdx)}
+                                  title="Delete bullet"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                            {bullet.trim() && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, paddingLeft: 14, fontSize: 11 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  {inspection.hasStrongVerb ? (
+                                    <span style={{ color: 'var(--accent-green)', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}>
+                                      <Check size={12} /> Strong verb: "{inspection.firstWord}"
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                      <Sparkles size={11} style={{ color: 'var(--accent-amber)' }} /> Tip: begin with a strong action verb (e.g. Architected, Accelerated, Reduced)
+                                    </span>
+                                  )}
+                                </div>
+                                <span style={{
+                                  color: inspection.lengthRating === 'good' ? 'var(--text-muted)' : 'var(--accent-amber)',
+                                  fontWeight: 500
+                                }}>
+                                  {inspection.len} chars {inspection.lengthRating !== 'good' && `• ${inspection.lengthFeedback}`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', marginTop: 4 }} onClick={() => addExpBullet(exp.id)}>
                         <Plus size={14} /> Add Bullet
                       </button>
                     </div>
@@ -572,13 +809,39 @@ export default function ResumePage() {
                   </button>
                 </div>
                 
-                {activeResume.projects.map((proj) => (
+                {activeResume.projects.map((proj, projIdx) => (
                   <div key={proj.id} className="experience-card" style={{ padding: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <input className="form-input" placeholder="Project Name" style={{ fontWeight: 700, width: 300 }} value={proj.name} onChange={(e) => updateProject(proj.id, 'name', e.target.value)} />
-                      <button className="btn btn-ghost btn-icon" style={{ color: 'var(--accent-red)' }} onClick={() => removeProject(proj.id)}>
-                        <Trash2 size={16} />
-                      </button>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon btn-sm"
+                          disabled={projIdx === 0}
+                          onClick={() => moveProject(proj.id, 'up')}
+                          title="Move project up"
+                        >
+                          <ChevronUp size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon btn-sm"
+                          disabled={projIdx === activeResume.projects.length - 1}
+                          onClick={() => moveProject(proj.id, 'down')}
+                          title="Move project down"
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon btn-sm"
+                          style={{ color: 'var(--accent-red)' }}
+                          onClick={() => removeProject(proj.id)}
+                          title="Delete project"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <textarea 
                       className="form-textarea" 

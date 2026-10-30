@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AppTopbar from '@/components/AppTopbar';
-import { Settings, Zap, RotateCcw, Check, Sparkles } from 'lucide-react';
+import { Settings, Zap, RotateCcw, Check, Sparkles, Download, Upload, Database, CheckCircle2 } from 'lucide-react';
 import { SelectField, Tabs } from '@/components/ui';
 
 const defaultPrompts: Record<string, string> = {
@@ -96,6 +96,10 @@ export default function SettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState('');
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [restoreCounts, setRestoreCounts] = useState<{ resumes: number; applications: number; storyBank: number; scholarships: number } | null>(null);
   
   const [activeTab, setActiveTab] = useState('global');
 
@@ -106,7 +110,43 @@ export default function SettingsPage() {
     { id: 'cover-letter', label: 'Cover letter', detail: 'Application letter drafting' },
     { id: 'linkedin-message', label: 'Outreach message', detail: 'Recruiter and hiring team notes' },
     { id: 'qa-chat', label: 'AI Q&A', detail: 'Application and interview answers' },
+    { id: 'backup', label: 'Workspace Backup', detail: 'Export & restore JSON data' },
   ];
+
+  const handleDownloadBackup = () => {
+    window.open('/api/backup', '_blank');
+  };
+
+  const handleRestoreBackup = async () => {
+    if (!backupFile) return;
+    setRestoring(true);
+    setRestoreMsg('');
+    setRestoreCounts(null);
+
+    try {
+      const text = await backupFile.text();
+      const json = JSON.parse(text);
+
+      const res = await fetch('/api/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setRestoreCounts(data.counts);
+        setRestoreMsg('Backup restored successfully!');
+        setBackupFile(null);
+      } else {
+        setRestoreMsg(data.error || 'Failed to restore backup');
+      }
+    } catch (e: any) {
+      setRestoreMsg(`Error reading file: ${e.message}`);
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const loadSettingsAndModels = async () => {
     try {
@@ -248,6 +288,123 @@ export default function SettingsPage() {
                   <li><strong><span style={{ color: 'var(--accent-amber)' }}>16GB RAM:</span></strong> You can comfortably run <b>llama3</b> or <b>mistral</b>.</li>
                   <li><strong>Troubleshooting:</strong> If you get a "System Memory" error, close your browser tabs or restart Ollama to free up fragmented RAM.</li>
                 </ul>
+              </div>
+            </>
+          ) : activeTab === 'backup' ? (
+            <>
+              <div className="settings-section-heading">
+                <div>
+                  <span className="settings-section-kicker">DATA SOVEREIGNTY</span>
+                  <h2 className="card-title">Workspace Backup & Migration</h2>
+                </div>
+                <span className="settings-section-icon"><Database size={17} /></span>
+              </div>
+              <p className="settings-section-intro">
+                Applikator is completely local-first. You own 100% of your career data. Export full portable JSON backups or restore previous workspaces at any time.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 16 }}>
+                {/* Export Card */}
+                <div style={{ padding: 18, borderRadius: 10, border: '1px solid var(--border-secondary)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-primary)' }}>
+                      <Download size={18} style={{ color: 'var(--accent-primary)' }} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Export Entire Workspace</h3>
+                      <small style={{ color: 'var(--text-muted)' }}>Saves all Resumes, Job Applications, Story Bank entries, Scholarships, and AI prompts</small>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                    Exports an offline, formatted JSON bundle that you can archive, transfer to another device, or keep as a safe snapshot.
+                  </p>
+                  <div>
+                    <button type="button" onClick={handleDownloadBackup} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <Download size={15} /> Download Full Backup (.json)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Import / Restore Card */}
+                <div style={{ padding: 18, borderRadius: 10, border: '1px solid var(--border-secondary)', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border-primary)' }}>
+                      <Upload size={18} style={{ color: 'var(--accent-blue)' }} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Restore Workspace from JSON</h3>
+                      <small style={{ color: 'var(--text-muted)' }}>Restore your data or merge from another machine</small>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                    Select a previously exported <code>applikator-workspace-backup-*.json</code> file to restore your career assets. Existing items with matching IDs will be safely updated without wiping unreferenced data.
+                  </p>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                    <input
+                      type="file"
+                      accept=".json"
+                      id="backup-file-input"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setBackupFile(e.target.files[0]);
+                          setRestoreMsg('');
+                          setRestoreCounts(null);
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor="backup-file-input"
+                      className="btn btn-ghost"
+                      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                    >
+                      <Upload size={14} />
+                      {backupFile ? backupFile.name : 'Choose Backup JSON File…'}
+                    </label>
+
+                    {backupFile && (
+                      <button
+                        type="button"
+                        onClick={handleRestoreBackup}
+                        disabled={restoring}
+                        className="btn btn-primary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                      >
+                        {restoring ? <span className="spinner" /> : <Database size={14} />}
+                        {restoring ? 'Restoring…' : 'Restore Workspace Now'}
+                      </button>
+                    )}
+                  </div>
+
+                  {restoreMsg && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: restoreMsg.startsWith('Error') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                        color: restoreMsg.startsWith('Error') ? 'var(--accent-red)' : 'var(--accent-emerald)',
+                        border: `1px solid ${restoreMsg.startsWith('Error') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                      }}
+                    >
+                      <CheckCircle2 size={16} />
+                      <span>{restoreMsg}</span>
+                    </div>
+                  )}
+
+                  {restoreCounts && (
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+                      <span className="badge" style={{ background: 'var(--bg-primary)' }}>{restoreCounts.resumes} Resumes</span>
+                      <span className="badge" style={{ background: 'var(--bg-primary)' }}>{restoreCounts.applications} Applications</span>
+                      <span className="badge" style={{ background: 'var(--bg-primary)' }}>{restoreCounts.storyBank} Stories</span>
+                      <span className="badge" style={{ background: 'var(--bg-primary)' }}>{restoreCounts.scholarships} Scholarships</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (

@@ -14,31 +14,43 @@ import {
   FlaskConical,
   FileText,
   Target,
+  BookOpen,
+  Bell,
+  Bookmark,
+  CheckCircle2,
 } from 'lucide-react';
 import type { ApplicationData } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 
 export default function DashboardPage() {
   const [applications, setApplications] = useState<ApplicationData[]>([]);
+  const [storyCount, setStoryCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
-  const fetchApps = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch('/api/applications');
-      if (res.ok) {
-        const data = await res.json();
+      const [appsRes, storiesRes] = await Promise.all([
+        fetch('/api/applications'),
+        fetch('/api/story-bank'),
+      ]);
+      if (appsRes.ok) {
+        const data = await appsRes.json();
         setApplications(data);
       }
+      if (storiesRes.ok) {
+        const sData = await storiesRes.json();
+        setStoryCount(sData.length || 0);
+      }
     } catch (e) {
-      console.error('Failed to fetch applications:', e);
+      console.error('Failed to fetch dashboard data:', e);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchApps();
-  }, [fetchApps]);
+    fetchData();
+  }, [fetchData]);
 
   const counts = {
     saved: applications.filter((a) => a.status === 'saved').length,
@@ -53,6 +65,14 @@ export default function DashboardPage() {
   const avgScore = scoredApplications.length > 0
     ? Math.round(scoredApplications.reduce((sum, application) => sum + application.atsScore, 0) / scoredApplications.length)
     : 0;
+
+  const now = new Date().getTime();
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+  const followUpCandidates = applications.filter((a) => {
+    if (a.status !== 'applied') return false;
+    const appDate = new Date(a.appliedAt || a.createdAt || '').getTime();
+    return now - appDate >= sevenDaysMs;
+  });
 
   const recentApps = [...applications]
     .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
@@ -83,10 +103,48 @@ export default function DashboardPage() {
             </a>
           </section>
 
+          {followUpCandidates.length > 0 && (
+            <section className="card" style={{ padding: 18, background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02))', borderColor: 'rgba(245, 158, 11, 0.3)', borderRadius: 12, marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-amber)' }}>
+                    <Bell size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                      {followUpCandidates.length} Application{followUpCandidates.length > 1 ? 's' : ''} Awaiting Follow-Up (7+ Days)
+                    </h3>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                      Candidate responses increase significantly when sending a brief, polite check-in note 7 days after applying.
+                    </p>
+                  </div>
+                </div>
+                <a href="/applications" className="btn btn-ghost btn-sm" style={{ borderColor: 'var(--border-secondary)' }}>
+                  View All in Job Log &rarr;
+                </a>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+                {followUpCandidates.slice(0, 3).map((app) => (
+                  <div key={app.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-secondary)', flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>{app.jobTitle}</strong>
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>at {app.company}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <a href={`/lab?appId=${app.id}`} className="btn btn-ghost btn-sm" style={{ fontSize: 11, height: 26, padding: '0 8px', color: 'var(--accent-primary)' }}>
+                        <FlaskConical size={12} /> Re-open in Lab
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="dashboard-quick-actions" aria-label="Quick actions">
             <a href="/resume" className="action-card">
               <span className="action-card-icon"><FileText size={19} /></span>
-              <span><strong className="action-card-title">Master Resume</strong><small className="action-card-desc">Edit your career profile</small></span>
+              <span><strong className="action-card-title">Master Resume</strong><small className="action-card-desc">Edit career profile</small></span>
               <ArrowRight className="action-card-arrow" size={16} />
             </a>
             <a href="/applications" className="action-card">
@@ -97,6 +155,11 @@ export default function DashboardPage() {
             <a href="/lab" className="action-card">
               <span className="action-card-icon"><FlaskConical size={19} /></span>
               <span><strong className="action-card-title">The Lab</strong><small className="action-card-desc">Create tailored materials</small></span>
+              <ArrowRight className="action-card-arrow" size={16} />
+            </a>
+            <a href="/guidelines" className="action-card">
+              <span className="action-card-icon"><BookOpen size={19} /></span>
+              <span><strong className="action-card-title">User Guide</strong><small className="action-card-desc">How Applikator works</small></span>
               <ArrowRight className="action-card-arrow" size={16} />
             </a>
           </section>
@@ -164,6 +227,37 @@ export default function DashboardPage() {
                   <strong>{scoredApplications.length ? `${scoredApplications.length} ${scoredApplications.length === 1 ? 'resume scored' : 'resumes scored'}` : 'No scores yet'}</strong>
                   <span>{scoredApplications.length ? 'Average across scored applications' : 'Analyze a role in The Lab to get an ATS match.'}</span>
                   <a href="/lab">Analyze a role <ArrowRight size={14} /></a>
+                </div>
+              </div>
+            </article>
+
+            <article className="card dashboard-panel dashboard-score-panel">
+              <div className="dashboard-panel-heading">
+                <div><span className="dashboard-panel-kicker">STORY BANK</span><h2>Interview & Cover Letter Fuel</h2></div>
+                <Bookmark size={18} className="dashboard-panel-heading-icon" />
+              </div>
+              <div className="dashboard-score-content">
+                <div className="dashboard-score-ring">
+                  <svg viewBox="0 0 96 96" aria-hidden="true">
+                    <circle cx="48" cy="48" r="39" fill="none" stroke="var(--border-primary)" strokeWidth="7" />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="39"
+                      fill="none"
+                      stroke="var(--accent-purple)"
+                      strokeWidth="7"
+                      strokeDasharray={`${2 * Math.PI * 39}`}
+                      strokeDashoffset={`${2 * Math.PI * 39 * (1 - Math.min(100, (storyCount / 5) * 100) / 100)}`}
+                      transform="rotate(-90 48 48)"
+                    />
+                  </svg>
+                  <span>{storyCount}/5</span>
+                </div>
+                <div className="dashboard-score-copy">
+                  <strong>{storyCount >= 5 ? 'Strong Story Bank' : `${storyCount} of 5 stories ready`}</strong>
+                  <span>{storyCount >= 5 ? 'Your stories enrich tailored cover letters and interview simulations.' : 'Add STAR stories to supercharge personalized AI cover letters.'}</span>
+                  <a href="/story-bank">Open Story Bank <ArrowRight size={14} /></a>
                 </div>
               </div>
             </article>

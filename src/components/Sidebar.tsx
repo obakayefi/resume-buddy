@@ -16,6 +16,7 @@ import {
   Blocks,
   LayoutGrid,
   X,
+  BookOpen,
 } from 'lucide-react';
 import { ApplikatorLogo } from './ApplikatorLogo';
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/scholarships', label: 'Scholarships', icon: GraduationCap },
   { href: '/story-bank', label: 'Story Bank', icon: Bookmark },
   { href: '/lab', label: 'The Lab', icon: FlaskConical },
+  { href: '/guidelines', label: 'User Guide', icon: BookOpen },
   { href: '/ui-kit', label: 'UI Kit', icon: Blocks },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

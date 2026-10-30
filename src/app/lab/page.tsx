@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from 'react';
 import type { ElementType } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
@@ -25,8 +25,9 @@ import {
   Check,
   Pencil,
   X,
+  BookOpen,
 } from 'lucide-react';
-import type { MasterResumeData, GapAnalysis, OptimizedBullet } from '@/lib/types';
+import type { MasterResumeData, GapAnalysis, OptimizedBullet, StoryBankItem } from '@/lib/types';
 import PDFDownloadButton from '@/components/PDFDownloadButton';
 import CoverLetterPDF from '@/components/CoverLetterPDF';
 import { pdf } from '@react-pdf/renderer';
@@ -104,7 +105,21 @@ function resumeToText(resume: MasterResumeData): string {
   return text;
 }
 
-export default function LabPage() {
+function formatOllamaError(e: unknown, modelName: string, baseUrl: string): string {
+  if (e instanceof Error) {
+    const msg = e.message.toLowerCase();
+    if (msg.includes('system memory') || msg.includes('out of memory') || msg.includes('cuda out of memory')) {
+      return `Out of Memory: ${modelName} requires more RAM than currently available. Try switching to a lighter model (e.g. phi3 or tinyllama).`;
+    }
+    if (msg.includes('fetch failed') || msg.includes('failed to fetch') || msg.includes('econnrefused')) {
+      return `Cannot connect to Ollama at ${baseUrl}. Ensure Ollama is running locally ('ollama serve').`;
+    }
+    return e.message;
+  }
+  return 'AI generation failed. Please try again.';
+}
+
+function LabContent() {
   const [resumes, setResumes] = useState<MasterResumeData[]>([]);
   const [selectedResume, setSelectedResume] = useState<MasterResumeData | null>(null);
   const [jobDescription, setJobDescription] = useState('');
@@ -140,6 +155,28 @@ export default function LabPage() {
   const [labModel, setLabModel] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<{ name: string }[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [storyBankItems, setStoryBankItems] = useState<StoryBankItem[]>([]);
+
+  // Automatically find relevant Story Bank accomplishments matching Job Description keywords
+  const matchedStories = useMemo(() => {
+    if (!jobDescription.trim() || storyBankItems.length === 0) return [];
+    const jdWords = new Set(
+      jobDescription.toLowerCase().match(/[a-z0-9_-]{3,}/g) || []
+    );
+    return storyBankItems
+      .map((item) => {
+        const text = `${item.title} ${item.category} ${item.content}`.toLowerCase();
+        const itemWords = text.match(/[a-z0-9_-]{3,}/g) || [];
+        let matches = 0;
+        for (const w of itemWords) {
+          if (jdWords.has(w)) matches++;
+        }
+        return { item, matches };
+      })
+      .filter((res) => res.matches > 0)
+      .sort((a, b) => b.matches - a.matches)
+      .map((res) => res.item);
+  }, [jobDescription, storyBankItems]);
 
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [showPostApplyModal, setShowPostApplyModal] = useState(false);
@@ -180,6 +217,7 @@ export default function LabPage() {
                 setGenerationTimes(typeof app.generationTimes === 'string' ? JSON.parse(app.generationTimes) : app.generationTimes);
               } catch (e) {}
             }
+            let embeddedResume: MasterResumeData | null = null;
             if (app.optimizedResume) {
               try {
                 const parsed = JSON.parse(app.optimizedResume);
@@ -188,13 +226,45 @@ export default function LabPage() {
                 } else if (parsed?.bullets) {
                   setOptimizedBullets(parsed.bullets);
                 }
+                if (parsed?.resume) {
+                  embeddedResume = parsed.resume;
+                }
               } catch (e) {}
             }
+
+            // Load master resume if specified in query or in the application
+            const resumeIdToFetch = queryResumeId || app.masterResumeId;
+            if (resumeIdToFetch) {
+              try {
+                const resumeRes = await fetch(`/api/resumes/${resumeIdToFetch}`);
+                if (resumeRes.ok) {
+                  const resumeData = await resumeRes.json();
+                  setSelectedResume(resumeData);
+                } else if (embeddedResume) {
+                  setSelectedResume(embeddedResume);
+                }
+              } catch (e) {
+                if (embeddedResume) setSelectedResume(embeddedResume);
+              }
+            } else if (embeddedResume) {
+              setSelectedResume(embeddedResume);
+            }
+
             setIsInitialized(true);
             return;
           }
         } catch (e) {
           console.error('Failed to load application from appId query:', e);
+        }
+      } else if (queryResumeId) {
+        try {
+          const resumeRes = await fetch(`/api/resumes/${queryResumeId}`);
+          if (resumeRes.ok) {
+            const resumeData = await resumeRes.json();
+            setSelectedResume(resumeData);
+          }
+        } catch (e) {
+          console.error('Failed to load resume from resumeId query:', e);
         }
       }
 
@@ -217,7 +287,7 @@ export default function LabPage() {
     }
 
     loadFromQueryOrStorage();
-  }, [queryAppId]);
+  }, [queryAppId, queryResumeId]);
 
   const handleRestore = (restore: boolean) => {
     if (restore && savedData) {
@@ -276,15 +346,32 @@ export default function LabPage() {
 
   const fetchResumes = useCallback(async () => {
     try {
-      const [resumesRes, settingsRes] = await Promise.all([
+      const [resumesRes, settingsRes, storyRes] = await Promise.all([
         fetch('/api/resumes'),
-        fetch('/api/settings')
+        fetch('/api/settings'),
+        fetch('/api/story-bank'),
       ]);
 
       if (resumesRes.ok) {
-        const data = await resumesRes.json();
+        const data: MasterResumeData[] = await resumesRes.json();
         setResumes(data);
-        if (data.length > 0 && !selectedResume) setSelectedResume(data[0]);
+        if (data.length > 0) {
+          setSelectedResume(prev => {
+            if (prev) return prev;
+            if (queryResumeId) {
+              const matched = data.find((r: MasterResumeData) => r.id === queryResumeId);
+              if (matched) return matched;
+            }
+            return data[0];
+          });
+        }
+      }
+
+      if (storyRes.ok) {
+        const stories = await storyRes.json();
+        if (Array.isArray(stories)) {
+          setStoryBankItems(stories);
+        }
       }
 
       if (settingsRes.ok) {
@@ -307,7 +394,7 @@ export default function LabPage() {
     } catch (e) {
       console.error('Failed to load data:', e);
     }
-  }, [selectedResume]);
+  }, [queryResumeId]);
 
   useEffect(() => {
     fetchResumes();
@@ -367,11 +454,7 @@ export default function LabPage() {
       setActiveTab('analysis');
       notify('Analysis Ready!', 'Resume analysis against JD is complete.');
     } catch (e) {
-      if (e instanceof Error && e.message.toLowerCase().includes('system memory')) {
-        setError('Out of Memory: Your computer doesn\'t have enough RAM to run ' + (labModel || ollamaSettings.model) + '. Please select a smaller model like phi3 or tinyllama from the dropdown above.');
-      } else {
-        setError(e instanceof Error ? e.message : 'Analysis failed');
-      }
+      setError(formatOllamaError(e, labModel || ollamaSettings.model, ollamaSettings.baseUrl));
     } finally {
       setAnalyzing(false);
     }
@@ -401,6 +484,7 @@ export default function LabPage() {
           action: 'optimize',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
+          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
         }),
       });
       if (!res.ok) {
@@ -414,11 +498,7 @@ export default function LabPage() {
       setActiveTab('optimize');
       notify('Optimization Ready!', 'Tailored bullet points are ready.');
     } catch (e) {
-      if (e instanceof Error && e.message.toLowerCase().includes('system memory')) {
-        setError('Out of Memory: ' + (labModel || ollamaSettings.model) + ' is too large for your available RAM. Try switching to phi3 or tinyllama above.');
-      } else {
-        setError(e instanceof Error ? e.message : 'Optimization failed');
-      }
+      setError(formatOllamaError(e, labModel || ollamaSettings.model, ollamaSettings.baseUrl));
     } finally {
       setOptimizing(false);
     }
@@ -457,6 +537,7 @@ export default function LabPage() {
           action: 'cover-letter',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
+          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
         }),
       });
 
@@ -490,7 +571,7 @@ export default function LabPage() {
 
       notify('Cover Letter Ready!', 'Your Harvard-standard cover letter is complete.');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Cover letter generation failed');
+      setError(formatOllamaError(e, labModel || ollamaSettings.model, ollamaSettings.baseUrl));
     } finally {
       setGeneratingCover(false);
     }
@@ -552,7 +633,7 @@ export default function LabPage() {
 
       notify('LinkedIn Message Ready!', 'Outreach message generated.');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Generation failed');
+      setError(formatOllamaError(e, labModel || ollamaSettings.model, ollamaSettings.baseUrl));
     } finally {
       setGeneratingLinkedin(false);
     }
@@ -581,6 +662,7 @@ export default function LabPage() {
           action: 'qa-chat',
           model: labModel || ollamaSettings.model,
           baseUrl: ollamaSettings.baseUrl,
+          stories: matchedStories.length > 0 ? matchedStories : storyBankItems,
         }),
       });
 
@@ -613,7 +695,7 @@ export default function LabPage() {
       }
       setGenerationTimes(prev => ({ ...prev, chat: (prev.chat || 0) + (Date.now() - startTime) }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Chat failed');
+      setError(formatOllamaError(e, labModel || ollamaSettings.model, ollamaSettings.baseUrl));
     } finally {
       setSendingChat(false);
     }
@@ -871,6 +953,58 @@ export default function LabPage() {
 
             </div>
 
+            {/* Story Bank Intelligence Card */}
+            {storyBankItems.length > 0 && (
+              <div className="workspace-card lab-card" style={{ marginTop: 16 }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <label className="premium-label lab-section-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <BookOpen size={14} style={{ color: 'var(--accent-primary)' }} /> Story Bank Integration
+                    </label>
+                    <span className={`badge ${matchedStories.length > 0 ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: 10 }}>
+                      {matchedStories.length > 0 ? `${matchedStories.length} matched` : `${storyBankItems.length} active`}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                    {matchedStories.length > 0
+                      ? 'STAR accomplishments matching this role will enrich your Cover Letter and AI Chat.'
+                      : 'Saved accomplishments are ready to enrich your Cover Letter and AI Q&A responses.'}
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {(matchedStories.length > 0 ? matchedStories : storyBankItems).slice(0, 3).map((s) => (
+                      <span
+                        key={s.id}
+                        style={{
+                          fontSize: 11,
+                          padding: '4px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid var(--border-secondary)',
+                          color: 'var(--text-primary)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          maxWidth: '100%',
+                        }}
+                      >
+                        <span style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                          {s.category}
+                        </span>
+                        <span style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {s.title}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <a href="/story-bank" style={{ fontSize: 11, color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 600 }}>
+                      Open Story Bank ({storyBankItems.length}) →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Status Footer */}
             {applicationStatus !== 'idle' && (
               <div style={{ padding: '16px 20px', background: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: 'var(--radius-xl)', animation: 'fadeInSlideUp 0.4s ease' }}>
@@ -970,8 +1104,38 @@ export default function LabPage() {
           </div>
         </div>
         {error && (
-          <div className="lab-error-toast" role="alert">
-            <AlertCircle size={16} /> {error}
+          <div className="lab-error-toast" role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <AlertCircle size={18} style={{ color: 'var(--accent-red)', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, lineHeight: 1.4 }}>{error}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {error.toLowerCase().includes('memory') && availableModels.some(m => ['phi3', 'tinyllama', 'llama3.2:1b', 'qwen2.5:1.5b'].some(s => m.name.toLowerCase().includes(s))) && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  style={{ fontSize: 11, padding: '4px 10px' }}
+                  onClick={() => {
+                    const smaller = availableModels.find(m => ['phi3', 'tinyllama', 'llama3.2:1b', 'qwen2.5:1.5b'].some(s => m.name.toLowerCase().includes(s)));
+                    if (smaller) {
+                      setLabModel(smaller.name);
+                      setError('');
+                    }
+                  }}
+                >
+                  Switch to lighter model
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon btn-sm"
+                onClick={() => setError('')}
+                style={{ width: 24, height: 24, padding: 0 }}
+                title="Dismiss"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
         )}
       </main>
@@ -1674,3 +1838,25 @@ function CollapsibleSection({ title, count, defaultOpen = false, children }: { t
     </div>
   );
 }
+
+export default function LabPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="app-layout">
+          <Sidebar />
+          <AppTopbar />
+          <main className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-muted)' }}>
+              <div className="spinner" style={{ width: 20, height: 20 }} />
+              <span>Loading Lab...</span>
+            </div>
+          </main>
+        </div>
+      }
+    >
+      <LabContent />
+    </Suspense>
+  );
+}
+

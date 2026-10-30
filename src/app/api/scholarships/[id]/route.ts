@@ -54,6 +54,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 }
 
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const body = await req.json();
+
+    const scholarship = await prisma.scholarship.update({
+      where: { id },
+      data: body,
+      include: {
+        questions: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    return NextResponse.json(scholarship);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;

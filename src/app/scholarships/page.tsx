@@ -116,6 +116,26 @@ export default function ScholarshipsDashboardPage() {
     }
   };
 
+  const handleStatusChange = async (id: string, newStatus: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const prevScholarships = [...scholarships];
+    setScholarships(prev => prev.map(s => s.id === id ? { ...s, status: newStatus as any } : s));
+
+    try {
+      const res = await fetch(`/api/scholarships/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        setScholarships(prevScholarships);
+      }
+    } catch {
+      setScholarships(prevScholarships);
+    }
+  };
+
   const filteredScholarships = scholarships.filter(s => {
     const trackMatch = selectedTrack === 'All' || s.track === selectedTrack;
     const statusMatch = selectedStatus === 'All' || s.status === selectedStatus;
@@ -298,22 +318,99 @@ export default function ScholarshipsDashboardPage() {
                 </div>
 
                 {/* Footer Progress & Status */}
-                <div style={{ paddingTop: 12, borderTop: '1px solid var(--border-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
-                    <Clock size={13} />
-                    <span>{completedCount} of {qList.length} questions ready</span>
+                <div style={{ paddingTop: 12, borderTop: '1px solid var(--border-secondary)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
+                      <Clock size={13} />
+                      <span>{completedCount} of {qList.length} prompts ready</span>
+                    </div>
+
+                    <span
+                      className="badge"
+                      style={{
+                        backgroundColor: `${SCHOLARSHIP_STATUS_COLORS[scholarship.status]}15`,
+                        color: SCHOLARSHIP_STATUS_COLORS[scholarship.status],
+                        borderColor: `${SCHOLARSHIP_STATUS_COLORS[scholarship.status]}30`,
+                      }}
+                    >
+                      {SCHOLARSHIP_STATUS_LABELS[scholarship.status] || scholarship.status}
+                    </span>
                   </div>
 
-                  <span
-                    className="badge"
+                  {/* 1-Click Status Stepper */}
+                  <div
                     style={{
-                      backgroundColor: `${SCHOLARSHIP_STATUS_COLORS[scholarship.status]}15`,
-                      color: SCHOLARSHIP_STATUS_COLORS[scholarship.status],
-                      borderColor: `${SCHOLARSHIP_STATUS_COLORS[scholarship.status]}30`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                      background: 'var(--bg-secondary)',
+                      padding: '4px 8px',
+                      borderRadius: 8,
+                      fontSize: 11,
                     }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                   >
-                    {SCHOLARSHIP_STATUS_LABELS[scholarship.status] || scholarship.status}
-                  </span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500 }}>Advance:</span>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {scholarship.status === 'saved' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '2px 8px', height: 24, fontSize: 11, color: 'var(--accent-blue)', borderColor: 'var(--border-secondary)' }}
+                          onClick={(e) => handleStatusChange(scholarship.id, 'drafting', e)}
+                        >
+                          Drafting &rarr;
+                        </button>
+                      )}
+                      {scholarship.status === 'drafting' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '2px 8px', height: 24, fontSize: 11, color: 'var(--accent-purple)', borderColor: 'var(--border-secondary)' }}
+                          onClick={(e) => handleStatusChange(scholarship.id, 'review', e)}
+                        >
+                          In Review &rarr;
+                        </button>
+                      )}
+                      {scholarship.status === 'review' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '2px 8px', height: 24, fontSize: 11, color: 'var(--accent-primary)', borderColor: 'var(--border-secondary)' }}
+                          onClick={(e) => handleStatusChange(scholarship.id, 'submitted', e)}
+                        >
+                          Submit &rarr;
+                        </button>
+                      )}
+                      {scholarship.status === 'submitted' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '2px 8px', height: 24, fontSize: 11, color: 'var(--accent-emerald)', borderColor: 'var(--border-secondary)' }}
+                          onClick={(e) => handleStatusChange(scholarship.id, 'awarded', e)}
+                        >
+                          Awarded &#127881;
+                        </button>
+                      )}
+                      {scholarship.status === 'awarded' && (
+                        <span style={{ color: 'var(--accent-emerald)', fontWeight: 600, fontSize: 11 }}>
+                          &#10003; Won
+                        </span>
+                      )}
+                      {scholarship.status !== 'saved' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: '2px 6px', height: 24, fontSize: 10, color: 'var(--text-muted)' }}
+                          title="Reset to Saved"
+                          onClick={(e) => handleStatusChange(scholarship.id, 'saved', e)}
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </Link>
             );

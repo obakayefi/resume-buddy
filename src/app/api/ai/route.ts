@@ -91,7 +91,22 @@ Output only the RAW message text. DO NOT wrap it in JSON, DO NOT use Markdown co
   'qa-chat': `Act as the job candidate. You have the candidate's full resume and the job description as context.
 
 Answer application and interview questions in FIRST PERSON as the candidate — specific, confident, and human-sounding.
-Act as a sophisticated executive candidate with an Ivy League background, delivering responses in the first person with precision, authority, and intellectual rigor. You must provide direct answers without any meta-commentary, introductory fluff, or AI-based disclaimers, starting immediately with the most impactful information. For behavioral questions, utilize a STAR-Impact framework that emphasizes strategic intent and measurable results, ensuring that any data or achievements drawn from the resume are contextualized within the broader challenges of the role. Maintain a natural yet elevated tone by employing a diverse lexicon of high-precision verbs and varying sentence structures to create a professional rhythm; use contractions sparingly only to enhance conversational flow, and ensure every response is scaled in length to the complexity of the inquiry while remaining entirely devoid of filler.`
+Act as a sophisticated executive candidate with an Ivy League background, delivering responses in the first person with precision, authority, and intellectual rigor. You must provide direct answers without any meta-commentary, introductory fluff, or AI-based disclaimers, starting immediately with the most impactful information. For behavioral questions, utilize a STAR-Impact framework that emphasizes strategic intent and measurable results, ensuring that any data or achievements drawn from the resume are contextualized within the broader challenges of the role. Maintain a natural yet elevated tone by employing a diverse lexicon of high-precision verbs and varying sentence structures to create a professional rhythm; use contractions sparingly only to enhance conversational flow, and ensure every response is scaled in length to the complexity of the inquiry while remaining entirely devoid of filler.`,
+  'polish-star': `You are an elite executive career coach and technical storytelling specialist.
+Transform the candidate's raw notes, achievements, or project summary into a high-impact, publication-grade STAR (Situation, Task, Action, Result) narrative formatted for behavioral interviews and application essays.
+
+STRUCTURE:
+Situation: Concise description of the business context, engineering challenge, or high-stakes scenario.
+Task: The exact strategic objective, ownership scope, and responsibility assigned to the candidate.
+Action: Concrete, high-power technical decisions, tools/technologies used, leadership actions, and problem-solving execution.
+Result: Quantifiable business outcome, metrics (percentages, latency, throughput, dollars, retention), and broader organizational impact.
+
+Rules:
+- Write in confident first-person ("I").
+- Use powerful action verbs (Architected, Spearheaded, Optimized, Orchestrated).
+- Highlight concrete metrics and deliverables.
+- Keep output cleanly structured with Situation, Task, Action, and Result.
+- Output only the polished STAR narrative without meta-commentary or conversational filler.`
 };
 
 async function fetchWithFailover(urlPath: string, options: RequestInit, preferredUrl: string): Promise<Response> {
@@ -167,6 +182,7 @@ export async function POST(request: Request) {
       candidateLocation,
       candidateWebsite,
       candidateLinkedin,
+      stories,
     } = await request.json();
 
     let settingsObj = null;
@@ -179,6 +195,19 @@ export async function POST(request: Request) {
     } catch (dbErr) {
       console.warn('Could not read settings from DB (using defaults / client params):', (dbErr as any)?.message || dbErr);
     }
+
+    let resolvedStories: Array<{ title: string; category?: string; content: string }> = Array.isArray(stories) ? stories : [];
+    if (resolvedStories.length === 0 && (action === 'cover-letter' || action === 'qa-chat' || action === 'optimize')) {
+      try {
+        resolvedStories = await prisma.storyBankItem.findMany({ take: 6, orderBy: { createdAt: 'desc' } });
+      } catch (err) {
+        console.warn('Could not load StoryBankItems from DB:', err);
+      }
+    }
+
+    const storiesText = resolvedStories.length > 0
+      ? resolvedStories.map((s, idx) => `STORY #${idx + 1} [${s.category || 'General'}]: ${s.title}\n${s.content}`).join('\n\n')
+      : '';
 
     const ollamaUrl = baseUrl || settingsObj?.ollamaBaseUrl || 'http://127.0.0.1:11434';
 
@@ -212,7 +241,7 @@ export async function POST(request: Request) {
       case 'optimize': {
         prompt = `CANDIDATE RESUME:
 ${resume}
-
+${storiesText ? `\nVERIFIED CANDIDATE ACCOMPLISHMENTS (STORY BANK):\n${storiesText}\n` : ''}
 TARGET JOB DESCRIPTION:
 ${jobDescription}
 ${company ? `TARGET COMPANY: ${company}\n` : ''}${jobTitle ? `TARGET ROLE: ${jobTitle}\n` : ''}
@@ -258,7 +287,7 @@ Salutation to Use: ${salutation}
 
 CANDIDATE MASTER RESUME:
 ${resume}
-
+${storiesText ? `\nCANDIDATE STORY BANK / VERIFIED STAR ACCOMPLISHMENTS:\n${storiesText}\n` : ''}
 TARGET JOB DESCRIPTION:
 ${jobDescription}
 
@@ -278,7 +307,7 @@ ${salutation}
 
 [Opening Paragraph: Clear statement of the position, candidate's senior technical profile and years of experience, and a compelling strategic value proposition for ${targetCompany}.]
 
-[Body Paragraph 1 - Technical Impact & Evidence: 2-3 specific, metric-backed achievements from the resume such as latency reductions, load time optimizations, or system architecture, directly aligned with the core technical stack and requirements from the Job Description.]
+[Body Paragraph 1 - Technical Impact & Evidence: 2-3 specific, metric-backed achievements from the resume and Story Bank accomplishments such as latency reductions, load time optimizations, or system architecture, directly aligned with the core technical stack and requirements from the Job Description.]
 
 [Body Paragraph 2 - Systems, Velocity & Execution: How the candidate drives engineering velocity, async-first collaboration, architectural scalability, and mentorship to solve ${targetCompany}'s challenges from day one.]
 
@@ -307,7 +336,7 @@ MANDATORY RULES:
         systemPrompt = `Act as the job candidate. You have the candidate's full resume and the job description as context.
 
 Answer application and interview questions in FIRST PERSON as the candidate — specific, confident, and human-sounding.
-- Draw on real achievements and numbers from the resume wherever relevant.
+- Draw on real achievements, numbers, and STAR stories from both the resume and the Story Bank wherever relevant.
 - Match answer length to question complexity: short factual answers get 2-3 sentences; behavioural questions get a structured but conversational response.
 - Never say "As an AI", "Based on the resume", or any meta-commentary. Just answer directly as the person.
 - No fluff openers like "Great question!" or "Certainly!".
@@ -319,7 +348,7 @@ Answer application and interview questions in FIRST PERSON as the candidate — 
           .map((m) => `${m.role === 'user' ? 'Question' : 'Answer'}: ${m.content}`)
           .join('\n\n');
 
-        prompt = `RESUME:\n${resume}\n\nJOB DESCRIPTION:\n${jobDescription}\n\nEXTRA COMPANY CONTEXT: ${extraInfo || 'Not provided'}\n\n${historyText ? `CONVERSATION SO FAR:\n${historyText}\n\n` : ''}Question: ${(messages || []).at(-1)?.content || ''}\n\nAnswer:`;
+        prompt = `RESUME:\n${resume}\n\n${storiesText ? `CANDIDATE STORY BANK / STAR STORIES:\n${storiesText}\n\n` : ''}JOB DESCRIPTION:\n${jobDescription}\n\nEXTRA COMPANY CONTEXT: ${extraInfo || 'Not provided'}\n\n${historyText ? `CONVERSATION SO FAR:\n${historyText}\n\n` : ''}Question: ${(messages || []).at(-1)?.content || ''}\n\nAnswer:`;
         break;
       }
 
@@ -395,12 +424,24 @@ Evaluate this response now. Return ONLY JSON.`;
         break;
       }
 
+      case 'polish-star': {
+        prompt = `STORY / ACCOMPLISHMENT TITLE: ${jobTitle || company || 'Career Accomplishment'}
+CATEGORY: ${extraInfo || 'General'}
+
+RAW NOTES & DRAFT CONTENT:
+${resume || jobDescription || extraInfo}
+
+TASK:
+Transform the raw details above into a high-impact, professional STAR (Situation, Task, Action, Result) narrative. Use strong action verbs and highlight concrete metrics.`;
+        break;
+      }
+
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
     const isJsonAction = action === 'analyze' || action === 'optimize' || action === 'scholarship-essay-critique';
-    const isStreamAction = action === 'cover-letter' || action === 'linkedin-message' || action === 'qa-chat' || action === 'scholarship-essay-draft' || action === 'scholarship-essay-trim';
+    const isStreamAction = action === 'cover-letter' || action === 'linkedin-message' || action === 'qa-chat' || action === 'scholarship-essay-draft' || action === 'scholarship-essay-trim' || action === 'polish-star';
 
     const res = await fetchWithFailover('/api/generate', {
       method: 'POST',
