@@ -3,8 +3,6 @@ import { prisma } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
-export const dynamic = 'force-dynamic';
-
 const defaultPrompts: Record<string, string> = {
   'analyze': `You are an expert ATS (Applicant Tracking System) analyst. Compare a resume against a job description and provide a detailed gap analysis.
 
