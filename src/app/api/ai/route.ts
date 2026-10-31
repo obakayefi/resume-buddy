@@ -3,6 +3,10 @@ import { prisma } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
+// Allow route handler to run up to 300 seconds on supported serverless platforms
+export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
+
 const defaultPrompts: Record<string, string> = {
   'analyze': `You are an expert ATS (Applicant Tracking System) analyst. Compare a resume against a job description and provide a detailed gap analysis.
 
@@ -126,7 +130,13 @@ async function fetchWithFailover(urlPath: string, options: RequestInit, preferre
       const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
       const fullUrl = `${normalizedBase}${urlPath}`;
 
-      const res = await fetch(fullUrl, options);
+      const timeoutSignal = AbortSignal.timeout(300000); // 300 seconds
+      const combinedOptions: RequestInit = {
+        ...options,
+        signal: options.signal || timeoutSignal,
+      };
+
+      const res = await fetch(fullUrl, combinedOptions);
       return res;
     } catch (e: any) {
       lastError = e;
