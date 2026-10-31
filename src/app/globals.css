@@ -4521,12 +4521,14 @@ body {
   .settings-prompt-field .form-textarea { min-height: 320px; }
 }
 
-/* Mobile Lab: results lead, setup is collapsible, and the result viewport can be resized. */
+/* Mobile Lab: position details first, results screen follows */
 .lab-mobile-setup-toggle { display: none; }
 @media (max-width: 1100px) {
   .lab-workstation { display: flex; flex-direction: column; }
+  .control-panel { order: 1; }
+  .control-panel.mobile-setup-collapsed { display: none; }
   .lab-results-panel {
-    order: 1;
+    order: 2;
     display: flex;
     width: 100%;
     height: 68dvh;
@@ -4537,8 +4539,6 @@ body {
     resize: vertical;
   }
   .lab-results-panel .display-panel-body { min-height: 0; flex: 1 1 auto; overflow: auto; overscroll-behavior: contain; }
-  .control-panel { order: 2; }
-  .control-panel.mobile-setup-collapsed { display: none; }
   .lab-mobile-setup-toggle {
     display: inline-flex;
     min-height: 34px;
