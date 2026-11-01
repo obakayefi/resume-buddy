@@ -3,5 +3,3 @@
   command = "([ -x node_modules/.bin/next ] || npm ci --no-audit --no-fund) && npm run build"
   publish = ".next"
 
-[functions]
-  timeout = 300
